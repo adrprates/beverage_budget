@@ -1,0 +1,106 @@
+body {
+  background-color: #0e0e0f;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding-top: 70px;
+}
+
+.dashboard-container {
+  margin-top: 60px;
+}
+
+.custom-navbar {
+  background: linear-gradient(90deg, #121212, #1a1a1a);
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.navbar-brand {
+  font-size: 1.3rem;
+  color: #7801da !important;
+}
+
+.navbar-nav .nav-link {
+  color: #cfcfcf !important;
+  margin-left: 1rem;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+  color: #7801da !important;
+}
+
+.navbar-nav .nav-link.active {
+  color: #7801da !important;
+  border-bottom: 2px solid #7801da;
+}
+
+h1 {
+  font-weight: 600;
+}
+
+.highlight {
+  color: #7801da;
+}
+
+h5.card-title {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.dashboard-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 15px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(120, 1, 218, 0.2);
+}
+
+.dashboard-card p,
+.dashboard-card .form-label,
+.list-group-item {
+  color: #ffffff;
+}
+
+.btn-card {
+  border-radius: 10px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.btn-card:hover {
+  background: #7801da;
+  color: #fff;
+}
+
+form .form-control {
+  background-color: #121212;
+  border: 1px solid #2a2a2a;
+  color: #e0e0e0;
+}
+
+form .form-control:focus {
+  background-color: #121212;
+  color: #ffffff;
+  border-color: #7801da;
+  box-shadow: none;
+}
+
+form label {
+  font-weight: 500;
+}
+
+.ingrediente-item .form-control {
+  margin-bottom: 5px;
+}
+
+.btn-remove {
+  font-size: 0.9rem;
+  color: #ffffff;
+}
+
+.btn-remove:hover {
+  color: #7801da;
+}
