@@ -75,11 +75,20 @@
 
         <div class="mb-3">
           <label for="unitMeasure" class="form-label">Unidade de Medida</label>
+<<<<<<< HEAD
           <select th:field="*{unitMeasure}" class="form-select" id="unitMeasure" required>
             <option value="">Selecione a unidade</option>
             <option th:each="u : ${T(com.example.beverage_budget.enums.UnitOfMeasure).values()}"
                     th:value="${u}"
                     th:text="${u.description}">
+=======
+          <select th:field="*{unitMeasure.id}" class="form-select" id="unitMeasure" required>
+            <option value="">Selecione a unidade</option>
+            <option th:each="u : ${allUnits}"
+                    th:value="${u.id}"
+                    th:text="${u.description}"
+                    th:selected="${u.id == ingredient.unitMeasure?.id}">
+>>>>>>> 3bd4d13 (Add UnitOfMeasure table)
             </option>
           </select>
           <div class="text-danger" th:if="${#fields.hasErrors('unitMeasure')}" th:errors="*{unitMeasure}"></div>
