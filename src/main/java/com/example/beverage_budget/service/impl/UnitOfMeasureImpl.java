@@ -21,6 +21,7 @@ public class UnitOfMeasureImpl implements UnitOfMeasureService {
 
     @Override
     public UnitOfMeasure getById(Long id) {
-        return unitOfMeasureRepository.findById(id).orElse(null);
+        return unitOfMeasureRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Unidade de medida não encontrada: " + id));
     }
 }

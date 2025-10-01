@@ -1,10 +1,6 @@
 package com.example.beverage_budget.model;
 
 import com.example.beverage_budget.enums.IngredientType;
-<<<<<<< HEAD
-import com.example.beverage_budget.enums.UnitOfMeasure;
-=======
->>>>>>> 3bd4d13 (Add UnitOfMeasure table)
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -40,12 +36,7 @@ public class Ingredient {
     @NotNull
     BigDecimal volume;
 
-<<<<<<< HEAD
-    @Column(name = "unit_measure", nullable = false)
-    @Enumerated(EnumType.STRING)
-=======
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "unit_measure_id", nullable = false)
->>>>>>> 3bd4d13 (Add UnitOfMeasure table)
     private UnitOfMeasure unitMeasure;
 }
