@@ -28,6 +28,10 @@ public class Drink {
     @NotNull
     private BigDecimal quantity;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "unit_measure_id", nullable = false)
+    private UnitOfMeasure unitMeasure;
+
     @Column(name = "servings", nullable = false)
     @NotNull
     private Integer servings;

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prates Bar - Drinks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" th:href="@{/drink/list.css}">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark custom-navbar fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}">
+      <i class="bi bi-stars me-2"></i> Prates Bar
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="menu">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" th:href="@{/ingredient}"><i class="bi bi-box-seam"></i> Ingredientes</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/drink}"><i class="bi bi-cup-straw"></i> Drinks</a></li>
+        <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-people"></i> Proporções</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/resource}"><i class="bi bi-stars"></i> Recursos</a></li>
+        <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-cash-coin"></i> Orçamentos</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="text-center mt-5 pt-5">
+  <a th:href="@{/drink/create}" class="btn btn-outline-light btn-card btn-sm">Cadastrar Drink</a>
+</div>
+
+<div class="container dashboard-container">
+  <h1 class="text-center mb-4">
+    <span style="color:#ffffff;">Lista de</span> <span class="highlight">Drinks</span>
+  </h1>
+
+  <div th:each="drink : ${list}" class="card dashboard-card mb-4">
+    <div class="card-body">
+      <h5 class="card-title" th:text="${drink.name}">Nome do Drink</h5>
+
+      <p><strong>Quantidade Total:</strong> <span th:text="${drink.quantity}"></span> <span th:text="${drink.unitMeasure.description}"></span></p>
+      <p><strong>Porções:</strong> <span th:text="${drink.servings}"></span></p>
+      <p><strong>Descrição:</strong> <span th:text="${drink.description}"></span></p>
+
+      <p><strong>Ingredientes:</strong></p>
+      <ul>
+        <li th:each="di : ${drink.ingredients}">
+          <span th:text="${di.ingredient.name}"></span> - 
+          <span th:text="${di.quantity}"></span> 
+          <span th:text="${di.ingredient.unitMeasure.description}"></span>
+        </li>
+      </ul>
+
+      <a th:href="@{/drink/edit/{id}(id=${drink.id})}" 
+         class="btn btn-outline-light btn-card btn-sm me-2">Editar</a>
+
+      <a th:href="@{/drink/delete/{id}(id=${drink.id})}" 
+         class="btn btn-outline-light btn-card btn-sm">Excluir</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
