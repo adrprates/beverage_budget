@@ -37,10 +37,8 @@
 
   <div class="card dashboard-card mb-4">
     <div class="card-body">
-      <h5 class="card-title mb-3">Informações do Ingrediente</h5>
 
       <form th:action="@{/ingredient/save}" th:object="${ingredient}" method="post">
-
         <input type="hidden" th:field="*{id}"/>
 
         <div class="mb-3">
@@ -74,18 +72,17 @@
         </div>
 
         <div class="mb-3">
-            <label for="unitMeasure" class="form-label">Unidade de Medida</label>
-            <select th:field="*{unitMeasure.id}" class="form-select" id="unitMeasure" required>
-                <option value="">Selecione a unidade</option>
-                <option th:each="u : ${allUnits}"
-                        th:value="${u.id}"
-                        th:text="${u.description}"
-                        th:selected="${ingredient.unitMeasure != null} ? ${u.id == ingredient.unitMeasure.id} : false">
-                </option>
-            </select>
-            <div class="text-danger" th:if="${#fields.hasErrors('unitMeasure')}" th:errors="*{unitMeasure}"></div>
+          <label for="unitMeasure" class="form-label">Unidade de Medida</label>
+          <select th:field="*{unitMeasure.id}" class="form-select" required>
+              <option value="">Selecione a unidade</option>
+              <option th:each="u : ${allUnits}"
+                      th:value="${u.id}"
+                      th:text="${u.description}"
+                      th:selected="${ingredient.unitMeasure != null} ? ${u.id == ingredient.unitMeasure.id} : false">
+              </option>
+          </select>
+          <div class="text-danger" th:if="${#fields.hasErrors('unitMeasure')}" th:errors="*{unitMeasure}"></div>
         </div>
-
 
         <div class="text-center mt-4">
           <button type="submit" class="btn btn-outline-light btn-card">Salvar Ingrediente</button>

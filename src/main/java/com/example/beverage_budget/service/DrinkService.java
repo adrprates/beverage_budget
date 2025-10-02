@@ -9,6 +9,7 @@ public interface DrinkService {
     void save(Drink drink);
     Drink getById(Long id);
     void deleteById(Long id);
+    List<Drink> searchByName(String name);
 
     void removeIngredient(Long drinkId, Long ingredientId);
 }

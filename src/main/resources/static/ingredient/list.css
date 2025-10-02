@@ -1,4 +1,4 @@
-body {
+body { 
   background-color: #0e0e0f;
   color: #e0e0e0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -54,10 +54,22 @@ h1 {
   box-shadow: 0 8px 20px rgba(120, 1, 218, 0.2);
 }
 
-.dashboard-card .card-title,
-.dashboard-card p,
-.list-group-item {
-  color: #ffffff;
+.ingredient-name {
+  color: #a855f7;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.ingredient-attributes {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.ingredient-attributes li {
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+  color: #9c9c9c;
 }
 
 .btn-card {
@@ -68,4 +80,55 @@ h1 {
 .btn-card:hover {
   background: #7801da;
   color: #fff;
+}
+
+.btn-edit {
+  background-color: #0d6efd;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.btn-edit:hover {
+  background-color: #fff;
+  color: #0d6efd;
+  border: 1px solid #0d6efd;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.btn-delete:hover {
+  background-color: #fff;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+}
+
+#searchInput {
+  border: 1px solid #2a2a2a;
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  padding: 8px 12px;
+}
+
+#searchInput:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(120, 1, 218, 0.5);
+  border-color: #7801da;
+}
+
+.input-group-text {
+  border: 1px solid #2a2a2a;
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+}
+
+#searchInput::placeholder {
+  color: #9c9c9c;
 }

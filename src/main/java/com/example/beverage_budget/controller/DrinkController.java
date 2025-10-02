@@ -31,8 +31,15 @@ public class DrinkController {
     private UnitOfMeasureService unitService;
 
     @GetMapping({"", "/"})
-    public String list(Model model) {
-        model.addAttribute("list", drinkService.getAll());
+    public String list(@RequestParam(required = false) String search, Model model) {
+        List<Drink> drinks;
+        if (search != null && !search.isEmpty()) {
+            drinks = drinkService.searchByName(search);
+        } else {
+            drinks = drinkService.getAll();
+        }
+        model.addAttribute("list", drinks);
+        model.addAttribute("search", search);
         return "drink/list";
     }
 

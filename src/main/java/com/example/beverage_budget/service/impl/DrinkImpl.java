@@ -63,4 +63,9 @@ public class DrinkImpl implements DrinkService {
             save(drink);
         }
     }
+
+    @Override
+    public List<Drink> searchByName(String name) {
+        return drinkRepository.findByNameContainingIgnoreCase(name);
+    }
 }

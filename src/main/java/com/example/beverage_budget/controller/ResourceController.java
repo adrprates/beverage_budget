@@ -9,6 +9,8 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/resource")
 public class ResourceController {
@@ -16,9 +18,15 @@ public class ResourceController {
     @Autowired
     private ResourceService resourceService;
 
-    @GetMapping({"","/"})
-    public String list(Model model) {
-        model.addAttribute("list", resourceService.getAll());
+    @GetMapping({"", "/"})
+    public String list(@RequestParam(value = "name", required = false) String name, Model model) {
+        List<Resource> resources;
+        if (name != null && !name.isEmpty()) {
+            resources = resourceService.findByName(name);
+        } else {
+            resources = resourceService.getAll();
+        }
+        model.addAttribute("list", resources);
         return "resource/list";
     }
 

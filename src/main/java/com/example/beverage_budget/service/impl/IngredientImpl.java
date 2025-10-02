@@ -1,11 +1,13 @@
 package com.example.beverage_budget.service.impl;
 
+import com.example.beverage_budget.enums.IngredientType;
 import com.example.beverage_budget.model.Ingredient;
 import com.example.beverage_budget.repository.IngredientRepository;
 import com.example.beverage_budget.service.IngredientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,5 +42,16 @@ public class IngredientImpl implements IngredientService {
     @Override
     public void deleteById(Long id) {
         ingredientRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Ingredient> searchByName(String name) {
+        return ingredientRepository.findByNameContainingIgnoreCase(name);
+    }
+
+    @Override
+    public List<Ingredient> searchByType(IngredientType type) {
+        if (type == null) return Collections.emptyList();
+        return ingredientRepository.findByIngredientType(type);
     }
 }

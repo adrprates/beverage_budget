@@ -9,4 +9,5 @@ public interface ResourceService {
     void save(Resource resource);
     Resource getById(Long id);
     void deleteById(Long id);
+    List<Resource> findByName(String name);
 }

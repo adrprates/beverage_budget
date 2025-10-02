@@ -1,5 +1,6 @@
 package com.example.beverage_budget.controller;
 
+import com.example.beverage_budget.enums.IngredientType;
 import com.example.beverage_budget.model.Ingredient;
 import com.example.beverage_budget.model.UnitOfMeasure;
 import com.example.beverage_budget.service.IngredientService;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/ingredient")
@@ -24,6 +27,29 @@ public class IngredientController {
     @GetMapping({"", "/"})
     public String list(Model model) {
         model.addAttribute("list", ingredientService.getAll());
+        return "ingredient/list";
+    }
+
+    @GetMapping("/search")
+    public String search(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String filter,
+            Model model
+    ) {
+        List<Ingredient> result;
+
+        if ("type".equalsIgnoreCase(filter)) {
+            try {
+                IngredientType type = IngredientType.valueOf(query.toUpperCase());
+                result = ingredientService.searchByType(type);
+            } catch (IllegalArgumentException e) {
+                result = List.of();
+            }
+        } else {
+            result = ingredientService.searchByName(query);
+        }
+
+        model.addAttribute("list", result);
         return "ingredient/list";
     }
 

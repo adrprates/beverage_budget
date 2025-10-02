@@ -41,4 +41,9 @@ public class ResourceImpl implements ResourceService {
     public void deleteById(Long id) {
         resourceRepository.deleteById(id);
     }
+
+    @Override
+    public List<Resource> findByName(String name) {
+        return resourceRepository.findByNameContainingIgnoreCase(name);
+    }
 }
