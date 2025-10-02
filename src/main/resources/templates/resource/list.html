@@ -20,10 +20,10 @@
     </button>
     <div class="collapse navbar-collapse" id="menu">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" th:href="@{/ingredient}"><i class="bi bi-box-seam"></i> Ingredientes</a></li>
+        <li class="nav-item"><a class="nav-link active" th:href="@{/ingredient}"><i class="bi bi-box-seam"></i> Ingredientes</a></li>
         <li class="nav-item"><a class="nav-link" th:href="@{/drink}"><i class="bi bi-cup-straw"></i> Drinks</a></li>
         <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-people"></i> Proporções</a></li>
-        <li class="nav-item"><a class="nav-link active" th:href="@{/resource}"><i class="bi bi-stars"></i> Recursos</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/resource}"><i class="bi bi-stars"></i> Recursos</a></li>
         <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-cash-coin"></i> Orçamentos</a></li>
       </ul>
     </div>
@@ -39,7 +39,6 @@
     <span style="color:#ffffff;">Lista de</span> <span class="highlight">Recursos</span>
   </h1>
 
-  <!-- Campo de busca -->
   <div class="container text-center mt-4 mb-4">
     <div class="input-group w-50 mx-auto" style="margin-bottom:50px;">
       <span class="input-group-text bg-dark text-light" id="basic-addon1">
@@ -49,7 +48,6 @@
     </div>
   </div>
 
-  <!-- Lista de recursos -->
   <div th:each="resource : ${list}" class="card dashboard-card mb-4">
     <div class="card-body">
       <h5 class="resource-name" th:text="${resource.name}">Nome do Recurso</h5>
