@@ -166,7 +166,8 @@
 </div>
 
 <script th:inline="javascript">
-  const ingredients = [];
+  const ingredients = /*[[${allIngredients}]]*/ [];
+
   let selectedIngredient = null;
 
   const searchInput = document.getElementById('ingredientSearch');
@@ -175,14 +176,24 @@
   const unitInput = document.getElementById('ingredientUnit');
   const addedIngredientsDiv = document.getElementById('addedIngredients');
 
-  document.querySelectorAll('.btn-remove').forEach(btn => {
-    btn.addEventListener('click', () => btn.parentElement.remove());
-  });
+  function createIngredientItem(ingredient, quantity) {
+    const div = document.createElement('div');
+    div.className = 'added-ingredient-item';
+    div.innerHTML = `
+      <span>${ingredient.name} - ${quantity} ${ingredient.unitMeasure.description}</span>
+      <button type="button" class="btn-remove">Remover</button>
+      <input type="hidden" name="ingredientIds" value="${ingredient.id}">
+      <input type="hidden" name="quantities" value="${quantity}">
+    `;
+    div.querySelector('.btn-remove').addEventListener('click', () => div.remove());
+    return div;
+  }
 
   searchInput.addEventListener('keyup', () => {
     const query = searchInput.value.toLowerCase();
     suggestionsList.innerHTML = '';
-    if(query.length === 0) return;
+    if (query.length === 0) return;
+
     const filtered = ingredients.filter(i => i.name.toLowerCase().includes(query));
     filtered.forEach(i => {
       const li = document.createElement('li');
@@ -198,24 +209,23 @@
   });
 
   document.getElementById('addIngredientBtn').addEventListener('click', () => {
-    if(!selectedIngredient || !quantityInput.value) return;
-    const div = document.createElement('div');
-    div.className = 'added-ingredient-item';
-    div.innerHTML = `
-      <span>${selectedIngredient.name} - ${quantityInput.value} ${unitInput.value}</span>
-      <button type="button" class="btn-remove">Remover</button>
-      <input type="hidden" name="ingredientIds" value="${selectedIngredient.id}">
-      <input type="hidden" name="quantities" value="${quantityInput.value}">
-    `;
-    div.querySelector('.btn-remove').addEventListener('click', () => div.remove());
-    addedIngredientsDiv.appendChild(div);
+    if (!selectedIngredient || !quantityInput.value) return;
 
+    const item = createIngredientItem(selectedIngredient, quantityInput.value);
+    addedIngredientsDiv.appendChild(item);
+
+    // limpa os campos
     searchInput.value = '';
     quantityInput.value = '';
     unitInput.value = '';
     selectedIngredient = null;
   });
+
+  document.querySelectorAll('.added-ingredient-item .btn-remove').forEach(btn => {
+    btn.addEventListener('click', () => btn.parentElement.remove());
+  });
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

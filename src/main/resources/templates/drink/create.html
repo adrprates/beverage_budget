@@ -8,20 +8,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" th:href="@{/drink/save.css}">
   <style>
-    .ingredient-selector { 
-      display: flex; 
-      gap: 10px; 
-      flex-wrap: wrap; 
-    }
-    .ingredient-selector input, .ingredient-selector select { 
-      flex: 1; 
-      min-width: 150px; 
-      padding: 5px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
     #ingredientSuggestions { 
       max-height: 150px; 
       overflow-y: auto; 
@@ -29,22 +15,31 @@
       position: absolute; 
       z-index: 10; 
       width: 100%; 
-      background-color: white; 
-      padding: 0;
-      list-style: none;
-      border: 1px solid #ccc;
-      border-radius: 4px;
     }
 
     #ingredientSuggestions li {
-      font-weight: bold;
-      color: black;
+      font-weight: bold;         
+      color: black;              
+      background-color: white;  
+      cursor: pointer;           
       padding: 5px 10px;
-      cursor: pointer;
+      list-style: none;
+      border-bottom: 1px solid #ccc;
     }
 
     #ingredientSuggestions li:hover {
-      background-color: #e0e0e0;
+      background-color: #e0e0e0; 
+    }
+
+    .ingredient-selector { 
+      display: flex; 
+      gap: 10px; 
+      flex-wrap: wrap; 
+    }
+
+    .ingredient-selector input, .ingredient-selector select { 
+      flex: 1; 
+      min-width: 150px; 
     }
 
     .added-ingredient-item { 
@@ -141,15 +136,22 @@
         <div class="mb-3">
           <label for="ingredientSearch" class="form-label">Adicionar Ingrediente</label>
           <div class="ingredient-selector">
-            <input type="text" id="ingredientSearch" placeholder="Digite o nome do ingrediente...">
-            <input type="number" id="ingredientQuantity" placeholder="Quantidade">
-            <input type="text" id="ingredientUnit" placeholder="Unidade" readonly>
+            <input type="text" id="ingredientSearch" placeholder="Digite o nome do ingrediente..." class="form-control">
+            <input type="number" id="ingredientQuantity" placeholder="Quantidade" class="form-control">
+            <input type="text" id="ingredientUnit" placeholder="Unidade" class="form-control" readonly>
             <button type="button" id="addIngredientBtn" class="btn btn-outline-light btn-card">Adicionar</button>
           </div>
           <ul id="ingredientSuggestions"></ul>
         </div>
 
-        <div class="added-ingredients" id="addedIngredients"></div>
+        <div class="added-ingredients" id="addedIngredients">
+          <div th:each="di : ${drink.ingredients}" class="added-ingredient-item">
+            <span th:text="|${di.ingredient.name} - ${di.quantity} ${di.ingredient.unitMeasure.description}|"></span>
+            <button type="button" class="btn-remove">Remover</button>
+            <input type="hidden" name="ingredientIds" th:value="${di.ingredient.id}">
+            <input type="hidden" name="quantities" th:value="${di.quantity}">
+          </div>
+        </div>
 
         <div class="text-center mt-4">
           <button type="submit" class="btn btn-outline-light btn-card">Salvar Drink</button>
@@ -161,7 +163,8 @@
 </div>
 
 <script th:inline="javascript">
-  const ingredients = [];
+  const ingredients = /*[[${allIngredients}]]*/ [];
+
   let selectedIngredient = null;
 
   const searchInput = document.getElementById('ingredientSearch');
@@ -170,10 +173,24 @@
   const unitInput = document.getElementById('ingredientUnit');
   const addedIngredientsDiv = document.getElementById('addedIngredients');
 
+  function createIngredientItem(ingredient, quantity) {
+    const div = document.createElement('div');
+    div.className = 'added-ingredient-item';
+    div.innerHTML = `
+      <span>${ingredient.name} - ${quantity} ${ingredient.unitMeasure.description}</span>
+      <button type="button" class="btn-remove">Remover</button>
+      <input type="hidden" name="ingredientIds" value="${ingredient.id}">
+      <input type="hidden" name="quantities" value="${quantity}">
+    `;
+    div.querySelector('.btn-remove').addEventListener('click', () => div.remove());
+    return div;
+  }
+
   searchInput.addEventListener('keyup', () => {
     const query = searchInput.value.toLowerCase();
     suggestionsList.innerHTML = '';
-    if(query.length === 0) return;
+    if (query.length === 0) return;
+
     const filtered = ingredients.filter(i => i.name.toLowerCase().includes(query));
     filtered.forEach(i => {
       const li = document.createElement('li');
@@ -189,22 +206,19 @@
   });
 
   document.getElementById('addIngredientBtn').addEventListener('click', () => {
-    if(!selectedIngredient || !quantityInput.value) return;
-    const div = document.createElement('div');
-    div.className = 'added-ingredient-item';
-    div.innerHTML = `
-      <span>${selectedIngredient.name} - ${quantityInput.value} ${unitInput.value}</span>
-      <button type="button" class="btn-remove">Remover</button>
-      <input type="hidden" name="ingredientIds" value="${selectedIngredient.id}">
-      <input type="hidden" name="quantities" value="${quantityInput.value}">
-    `;
-    div.querySelector('.btn-remove').addEventListener('click', () => div.remove());
-    addedIngredientsDiv.appendChild(div);
+    if (!selectedIngredient || !quantityInput.value) return;
+
+    const item = createIngredientItem(selectedIngredient, quantityInput.value);
+    addedIngredientsDiv.appendChild(item);
 
     searchInput.value = '';
     quantityInput.value = '';
     unitInput.value = '';
     selectedIngredient = null;
+  });
+
+  document.querySelectorAll('.added-ingredient-item .btn-remove').forEach(btn => {
+    btn.addEventListener('click', () => btn.parentElement.remove());
   });
 </script>
 
