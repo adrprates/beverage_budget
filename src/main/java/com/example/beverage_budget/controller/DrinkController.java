@@ -65,27 +65,28 @@ public class DrinkController {
             bindingResult.rejectValue("unitMeasure", "NotNull", "Unidade de medida é obrigatória");
         }
 
-        if (bindingResult.hasErrors()) {
+        if (ingredientIds == null || ingredientIds.isEmpty() || quantities == null || quantities.isEmpty()) {
+            model.addAttribute("ingredientError", "O drink deve ter pelo menos um ingrediente.");
+        }
+
+        if (bindingResult.hasErrors() || model.containsAttribute("ingredientError")) {
             model.addAttribute("allIngredients", ingredientService.getAll());
             model.addAttribute("allUnits", unitService.getAll());
             return "drink/create";
         }
 
-        if (ingredientIds != null && quantities != null) {
-            List<DrinkIngredient> drinkIngredients = new ArrayList<>();
-            for (int i = 0; i < ingredientIds.size(); i++) {
-                Ingredient ing = ingredientService.getById(ingredientIds.get(i));
-                Double qty = quantities.get(i);
+        List<DrinkIngredient> drinkIngredients = new ArrayList<>();
+        for (int i = 0; i < ingredientIds.size(); i++) {
+            Ingredient ing = ingredientService.getById(ingredientIds.get(i));
+            Double qty = quantities.get(i);
 
-                DrinkIngredient di = new DrinkIngredient();
-                di.setDrink(drink);
-                di.setIngredient(ing);
-                di.setQuantity(qty);
-
-                drinkIngredients.add(di);
-            }
-            drink.setIngredients(drinkIngredients);
+            DrinkIngredient di = new DrinkIngredient();
+            di.setDrink(drink);
+            di.setIngredient(ing);
+            di.setQuantity(qty);
+            drinkIngredients.add(di);
         }
+        drink.setIngredients(drinkIngredients);
 
         drinkService.save(drink);
         return "redirect:/drink";
@@ -114,28 +115,30 @@ public class DrinkController {
             bindingResult.rejectValue("unitMeasure", "NotNull", "Unidade de medida é obrigatória");
         }
 
-        if (bindingResult.hasErrors()) {
+        // 🧠 NOVA VALIDAÇÃO: não pode salvar sem ingredientes
+        if (ingredientIds == null || ingredientIds.isEmpty() || quantities == null || quantities.isEmpty()) {
+            model.addAttribute("ingredientError", "O drink deve ter pelo menos um ingrediente.");
+        }
+
+        if (bindingResult.hasErrors() || model.containsAttribute("ingredientError")) {
             model.addAttribute("allIngredients", ingredientService.getAll());
             model.addAttribute("allUnits", unitService.getAll());
             return "drink/edit";
         }
 
         drink.getIngredients().clear();
-        if (ingredientIds != null && quantities != null) {
-            List<DrinkIngredient> drinkIngredients = new ArrayList<>();
-            for (int i = 0; i < ingredientIds.size(); i++) {
-                Ingredient ing = ingredientService.getById(ingredientIds.get(i));
-                Double qty = quantities.get(i);
+        List<DrinkIngredient> drinkIngredients = new ArrayList<>();
+        for (int i = 0; i < ingredientIds.size(); i++) {
+            Ingredient ing = ingredientService.getById(ingredientIds.get(i));
+            Double qty = quantities.get(i);
 
-                DrinkIngredient di = new DrinkIngredient();
-                di.setDrink(drink);
-                di.setIngredient(ing);
-                di.setQuantity(qty);
-
-                drinkIngredients.add(di);
-            }
-            drink.setIngredients(drinkIngredients);
+            DrinkIngredient di = new DrinkIngredient();
+            di.setDrink(drink);
+            di.setIngredient(ing);
+            di.setQuantity(qty);
+            drinkIngredients.add(di);
         }
+        drink.setIngredients(drinkIngredients);
 
         drinkService.save(drink);
         return "redirect:/drink";
@@ -150,7 +153,8 @@ public class DrinkController {
     @GetMapping("/{drinkId}/remove-ingredient/{ingredientId}")
     public String removeIngredient(@PathVariable Long drinkId,
                                    @PathVariable Long ingredientId) {
-        drinkService.removeIngredient(drinkId, ingredientId);
+        drinkService.removeIngredient(drinkId,
+                ingredientId);
         return "redirect:/drink/edit/" + drinkId;
     }
 }

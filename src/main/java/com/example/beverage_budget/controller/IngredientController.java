@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -113,8 +114,17 @@ public class IngredientController {
     }
 
     @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id) {
-        ingredientService.deleteById(id);
+    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            ingredientService.deleteById(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Ingrediente removido com sucesso!");
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Não é possível remover este ingrediente pois ele está associado a uma ou mais bebidas.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ocorreu um erro ao tentar remover o ingrediente.");
+        }
+
         return "redirect:/ingredient";
     }
 }

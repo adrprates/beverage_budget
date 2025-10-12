@@ -96,7 +96,7 @@
     <div class="card-body">
       <h5 class="card-title mb-3">Informações do Drink</h5>
 
-      <form th:action="@{/drink/save}" th:object="${drink}" method="post">
+      <form th:action="@{/drink/save}" th:object="${drink}" method="post" id="drinkForm">
 
         <div class="mb-3">
           <label class="form-label">Nome do Drink</label>
@@ -144,13 +144,10 @@
           <ul id="ingredientSuggestions"></ul>
         </div>
 
-        <div class="added-ingredients" id="addedIngredients">
-          <div th:each="di : ${drink.ingredients}" class="added-ingredient-item">
-            <span th:text="|${di.ingredient.name} - ${di.quantity} ${di.ingredient.unitMeasure.description}|"></span>
-            <button type="button" class="btn-remove">Remover</button>
-            <input type="hidden" name="ingredientIds" th:value="${di.ingredient.id}">
-            <input type="hidden" name="quantities" th:value="${di.quantity}">
-          </div>
+        <div class="added-ingredients" id="addedIngredients"></div>
+
+        <div class="text-danger" id="ingredientError" style="display:none;">
+          É necessário adicionar pelo menos um ingrediente.
         </div>
 
         <div class="text-center mt-4">
@@ -163,63 +160,68 @@
 </div>
 
 <script th:inline="javascript">
-  const ingredients = /*[[${allIngredients}]]*/ [];
+const ingredients = /*[[${allIngredients}]]*/ [];
+let selectedIngredient = null;
 
-  let selectedIngredient = null;
+const searchInput = document.getElementById('ingredientSearch');
+const suggestionsList = document.getElementById('ingredientSuggestions');
+const quantityInput = document.getElementById('ingredientQuantity');
+const unitInput = document.getElementById('ingredientUnit');
+const addedIngredientsDiv = document.getElementById('addedIngredients');
+const ingredientErrorDiv = document.getElementById('ingredientError');
+const drinkForm = document.getElementById('drinkForm');
 
-  const searchInput = document.getElementById('ingredientSearch');
-  const suggestionsList = document.getElementById('ingredientSuggestions');
-  const quantityInput = document.getElementById('ingredientQuantity');
-  const unitInput = document.getElementById('ingredientUnit');
-  const addedIngredientsDiv = document.getElementById('addedIngredients');
+function createIngredientItem(ingredient, quantity) {
+  const div = document.createElement('div');
+  div.className = 'added-ingredient-item';
+  div.innerHTML = `
+    <span>${ingredient.name} - ${quantity} ${ingredient.unitMeasure.description}</span>
+    <button type="button" class="btn-remove">Remover</button>
+    <input type="hidden" name="ingredientIds" value="${ingredient.id}">
+    <input type="hidden" name="quantities" value="${quantity}">
+  `;
+  addedIngredientsDiv.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn-remove')) {
+      e.target.parentElement.remove();
+    }
+  });
+  return div;
+}
 
-  function createIngredientItem(ingredient, quantity) {
-    const div = document.createElement('div');
-    div.className = 'added-ingredient-item';
-    div.innerHTML = `
-      <span>${ingredient.name} - ${quantity} ${ingredient.unitMeasure.description}</span>
-      <button type="button" class="btn-remove">Remover</button>
-      <input type="hidden" name="ingredientIds" value="${ingredient.id}">
-      <input type="hidden" name="quantities" value="${quantity}">
-    `;
-    div.querySelector('.btn-remove').addEventListener('click', () => div.remove());
-    return div;
-  }
-
-  searchInput.addEventListener('keyup', () => {
-    const query = searchInput.value.toLowerCase();
-    suggestionsList.innerHTML = '';
-    if (query.length === 0) return;
-
-    const filtered = ingredients.filter(i => i.name.toLowerCase().includes(query));
-    filtered.forEach(i => {
-      const li = document.createElement('li');
-      li.textContent = i.name;
-      li.addEventListener('click', () => {
-        selectedIngredient = i;
-        searchInput.value = i.name;
-        unitInput.value = i.unitMeasure.description;
-        suggestionsList.innerHTML = '';
-      });
-      suggestionsList.appendChild(li);
+searchInput.addEventListener('keyup', () => {
+  const query = searchInput.value.toLowerCase();
+  suggestionsList.innerHTML = '';
+  if (query.length === 0) return;
+  const filtered = ingredients.filter(i => i.name.toLowerCase().includes(query));
+  filtered.forEach(i => {
+    const li = document.createElement('li');
+    li.textContent = i.name;
+    li.addEventListener('click', () => {
+      selectedIngredient = i;
+      searchInput.value = i.name;
+      unitInput.value = i.unitMeasure.description;
+      suggestionsList.innerHTML = '';
     });
+    suggestionsList.appendChild(li);
   });
+});
 
-  document.getElementById('addIngredientBtn').addEventListener('click', () => {
-    if (!selectedIngredient || !quantityInput.value) return;
+document.getElementById('addIngredientBtn').addEventListener('click', () => {
+  if (!selectedIngredient || !quantityInput.value) return;
+  const item = createIngredientItem(selectedIngredient, quantityInput.value);
+  addedIngredientsDiv.appendChild(item);
+  searchInput.value = '';
+  quantityInput.value = '';
+  unitInput.value = '';
+  selectedIngredient = null;
+});
 
-    const item = createIngredientItem(selectedIngredient, quantityInput.value);
-    addedIngredientsDiv.appendChild(item);
-
-    searchInput.value = '';
-    quantityInput.value = '';
-    unitInput.value = '';
-    selectedIngredient = null;
-  });
-
-  document.querySelectorAll('.added-ingredient-item .btn-remove').forEach(btn => {
-    btn.addEventListener('click', () => btn.parentElement.remove());
-  });
+drinkForm.addEventListener('submit', (e) => {
+  if (addedIngredientsDiv.children.length === 0) {
+    e.preventDefault();
+    ingredientErrorDiv.style.display = 'block';
+  }
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
