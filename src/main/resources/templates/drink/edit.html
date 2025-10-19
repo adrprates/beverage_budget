@@ -33,6 +33,7 @@
     .added-ingredient-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: #2a2a2a; margin-bottom: 5px; border-radius: 5px; color: #fff; }
     .btn-remove { background: none; border: none; color: #ff6b6b; cursor: pointer; }
     .btn-remove:hover { color: #ff3b3b; }
+    .text-danger { margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -69,6 +70,7 @@
       <form th:action="@{/drink/update}" th:object="${drink}" method="post" id="drinkForm">
         <input type="hidden" th:field="*{id}">
 
+        <!-- Campos do drink -->
         <div class="mb-3">
           <label class="form-label">Nome do Drink</label>
           <input type="text" th:field="*{name}" class="form-control" placeholder="Ex: Caipirinha" required>
@@ -83,7 +85,7 @@
 
         <div class="mb-3">
           <label class="form-label">Unidade de Medida</label>
-          <select th:field="*{unitMeasure.id}" id="drinkUnit" class="form-select" required>
+          <select th:field="*{unitMeasure.id}" class="form-select" required>
             <option value="">Selecione a unidade</option>
             <option th:each="u : ${allUnits}" th:value="${u.id}" th:text="${u.description}" 
                     th:selected="${drink.unitMeasure != null} ? ${u.id == drink.unitMeasure.id} : false">
@@ -117,19 +119,23 @@
             <button type="button" id="addIngredientBtn" class="btn btn-outline-light btn-card">Adicionar</button>
           </div>
           <ul id="ingredientSuggestions"></ul>
+
+          <!-- Mensagens do controller -->
+          <div class="text-danger mt-2" th:if="${ingredientError}" th:text="${ingredientError}"></div>
+          <div class="text-danger mt-2" th:if="${ingredientConversionError}" th:text="${ingredientConversionError}"></div>
         </div>
 
         <div class="added-ingredients" id="addedIngredients">
           <div th:each="di : ${drink.ingredients}" class="added-ingredient-item">
-            <span th:text="|${di.ingredient.name} - ${di.quantity} ${di.ingredient.unitMeasure.description}|"></span>
+            <span th:text="|${di.ingredient.name} - ${di.quantity} ${di.unitMeasure.code}|"></span>
             <button type="button" class="btn-remove">Remover</button>
             <input type="hidden" name="ingredientIds" th:value="${di.ingredient.id}">
             <input type="hidden" name="quantities" th:value="${di.quantity}">
-            <input type="hidden" name="ingredientUnits" th:value="${di.ingredient.unitMeasure.code}">
+            <input type="hidden" name="ingredientUnits" th:value="${di.unitMeasure.code}">
           </div>
         </div>
 
-        <div class="text-danger" id="ingredientError" style="display:none;">
+        <div class="text-danger" id="ingredientErrorFront" style="display:none;">
           É necessário adicionar pelo menos um ingrediente.
         </div>
 
@@ -144,6 +150,7 @@
 
 <script th:inline="javascript">
 const ingredients = /*[[${allIngredients}]]*/ [];
+const allUnits = /*[[${allUnits}]]*/ [];
 let selectedIngredient = null;
 
 const searchInput = document.getElementById('ingredientSearch');
@@ -151,8 +158,7 @@ const suggestionsList = document.getElementById('ingredientSuggestions');
 const quantityInput = document.getElementById('ingredientQuantity');
 const unitSelect = document.getElementById('ingredientUnitSelect');
 const addedIngredientsDiv = document.getElementById('addedIngredients');
-const ingredientErrorDiv = document.getElementById('ingredientError');
-const drinkUnitSelect = document.getElementById('drinkUnit');
+const ingredientErrorFront = document.getElementById('ingredientErrorFront');
 const drinkForm = document.getElementById('drinkForm');
 
 function createIngredientItem(ingredient, quantity, unit) {
@@ -169,11 +175,12 @@ function createIngredientItem(ingredient, quantity, unit) {
   return div;
 }
 
-// Autocomplete de ingredientes
+// Autocomplete
 searchInput.addEventListener('keyup', () => {
   const query = searchInput.value.toLowerCase();
   suggestionsList.innerHTML = '';
   if (!query) return;
+
   const filtered = ingredients.filter(i => i.name.toLowerCase().includes(query));
   filtered.forEach(i => {
     const li = document.createElement('li');
@@ -181,14 +188,23 @@ searchInput.addEventListener('keyup', () => {
     li.addEventListener('click', () => {
       selectedIngredient = i;
       searchInput.value = i.name;
-      unitSelect.innerHTML = `<option value="${i.unitMeasure.code}" selected>${i.unitMeasure.description}</option>`;
+
+      unitSelect.innerHTML = '<option value="">Selecione a unidade</option>';
+      allUnits.forEach(u => {
+        const option = document.createElement('option');
+        option.value = u.code;
+        option.textContent = u.description;
+        if(u.code === i.unitMeasure.code) option.selected = true;
+        unitSelect.appendChild(option);
+      });
+
       suggestionsList.innerHTML = '';
     });
     suggestionsList.appendChild(li);
   });
 });
 
-// Adicionar novo ingrediente
+// Adicionar ingrediente
 document.getElementById('addIngredientBtn').addEventListener('click', () => {
   if (!selectedIngredient || !quantityInput.value || !unitSelect.value) return;
   const item = createIngredientItem(selectedIngredient, quantityInput.value, unitSelect.value);
@@ -210,9 +226,9 @@ addedIngredientsDiv.addEventListener('click', (e) => {
 drinkForm.addEventListener('submit', (e) => {
   if (addedIngredientsDiv.children.length === 0) {
     e.preventDefault();
-    ingredientErrorDiv.style.display = 'block';
+    ingredientErrorFront.style.display = 'block';
   } else {
-    ingredientErrorDiv.style.display = 'none';
+    ingredientErrorFront.style.display = 'none';
   }
 });
 </script>

@@ -25,7 +25,7 @@
       list-style: none;
       border-bottom: 1px solid #ccc;
     }
-    #ingredientSuggestions li:hover {
+    #ingredientSuggestions li:hover { 
       background-color: #e0e0e0; 
     }
     .ingredient-selector { 
@@ -55,6 +55,9 @@
     }
     .btn-remove:hover { 
       color: #ff3b3b; 
+    }
+    .text-danger {
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -138,15 +141,22 @@
             <button type="button" id="addIngredientBtn" class="btn btn-outline-light btn-card">Adicionar</button>
           </div>
 
+          <!-- Mensagem de erro do controller -->
           <div class="text-danger mt-2" th:if="${ingredientError}" th:text="${ingredientError}"></div>
+          <div class="text-danger mt-2" th:if="${ingredientConversionError}" th:text="${ingredientConversionError}"></div>
 
           <ul id="ingredientSuggestions"></ul>
         </div>
 
-        <div class="added-ingredients" id="addedIngredients"></div>
-
-        <div class="text-danger" id="ingredientErrorFront" style="display:none;">
-          É necessário adicionar pelo menos um ingrediente.
+        <!-- Ingredientes já adicionados -->
+        <div class="added-ingredients" id="addedIngredients">
+          <div class="added-ingredient-item" th:each="di : ${drink.ingredients}">
+            <span th:text="${di.ingredient.name} + ' - ' + ${di.quantity} + ' ' + ${di.unitMeasure.code}"></span>
+            <button type="button" class="btn-remove">Remover</button>
+            <input type="hidden" name="ingredientIds" th:value="${di.ingredient.id}">
+            <input type="hidden" name="quantities" th:value="${di.quantity}">
+            <input type="hidden" name="ingredientUnits" th:value="${di.unitMeasure.code}">
+          </div>
         </div>
 
         <div class="text-center mt-4">
@@ -167,27 +177,15 @@ const suggestionsList = document.getElementById('ingredientSuggestions');
 const quantityInput = document.getElementById('ingredientQuantity');
 const unitSelect = document.getElementById('ingredientUnitSelect');
 const addedIngredientsDiv = document.getElementById('addedIngredients');
-const ingredientErrorDivFront = document.getElementById('ingredientErrorFront');
-const drinkForm = document.getElementById('drinkForm');
 
-function createIngredientItem(ingredient, quantity, unit) {
-  const div = document.createElement('div');
-  div.className = 'added-ingredient-item';
-  div.innerHTML = `
-    <span>${ingredient.name} - ${quantity} ${unit}</span>
-    <button type="button" class="btn-remove">Remover</button>
-    <input type="hidden" name="ingredientIds" value="${ingredient.id}">
-    <input type="hidden" name="quantities" value="${quantity}">
-    <input type="hidden" name="ingredientUnits" value="${unit}">
-  `;
-  addedIngredientsDiv.addEventListener('click', (e) => {
-    if (e.target.classList.contains('btn-remove')) {
-      e.target.parentElement.remove();
-    }
-  });
-  return div;
-}
+// Remover ingrediente
+addedIngredientsDiv.addEventListener('click', (e) => {
+  if (e.target.classList.contains('btn-remove')) {
+    e.target.parentElement.remove();
+  }
+});
 
+// Autocomplete
 searchInput.addEventListener('keyup', () => {
   const query = searchInput.value.toLowerCase();
   suggestionsList.innerHTML = '';
@@ -206,25 +204,25 @@ searchInput.addEventListener('keyup', () => {
   });
 });
 
+// Adicionar ingrediente
 document.getElementById('addIngredientBtn').addEventListener('click', () => {
   if (!selectedIngredient || !quantityInput.value || !unitSelect.value) return;
-  const item = createIngredientItem(selectedIngredient, quantityInput.value, unitSelect.value);
-  addedIngredientsDiv.appendChild(item);
+
+  const div = document.createElement('div');
+  div.className = 'added-ingredient-item';
+  div.innerHTML = `
+    <span>${selectedIngredient.name} - ${quantityInput.value} ${unitSelect.value}</span>
+    <button type="button" class="btn-remove">Remover</button>
+    <input type="hidden" name="ingredientIds" value="${selectedIngredient.id}">
+    <input type="hidden" name="quantities" value="${quantityInput.value}">
+    <input type="hidden" name="ingredientUnits" value="${unitSelect.value}">
+  `;
+  addedIngredientsDiv.appendChild(div);
+
   searchInput.value = '';
   quantityInput.value = '';
   unitSelect.value = '';
   selectedIngredient = null;
-
-  ingredientErrorDivFront.style.display = 'none';
-});
-
-drinkForm.addEventListener('submit', (e) => {
-  if (addedIngredientsDiv.children.length === 0) {
-    e.preventDefault();
-    ingredientErrorDivFront.style.display = 'block';
-  } else {
-    ingredientErrorDivFront.style.display = 'none';
-  }
 });
 </script>
 

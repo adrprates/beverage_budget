@@ -14,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,16 +58,18 @@ public class DrinkController {
                        @RequestParam(value = "ingredientIds", required = false) List<Long> ingredientIds,
                        @RequestParam(value = "quantities", required = false) List<Double> quantities,
                        @RequestParam(value = "ingredientUnits", required = false) List<String> ingredientUnitCodes,
-                       Model model) {
+                       Model model,
+                       RedirectAttributes redirectAttributes) {
 
         if (ingredientIds == null || ingredientIds.isEmpty() || quantities == null || quantities.isEmpty()) {
-            model.addAttribute("ingredientError", "O drink deve ter pelo menos um ingrediente.");
+            redirectAttributes.addFlashAttribute("ingredientError", "O drink deve ter pelo menos um ingrediente.");
+            return "redirect:/drink/create";
         }
 
-        if (bindingResult.hasErrors() || model.containsAttribute("ingredientError")) {
-            model.addAttribute("allIngredients", ingredientService.getAll());
-            model.addAttribute("allUnits", unitService.getAll());
-            return "drink/create";
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.drink", bindingResult);
+            redirectAttributes.addFlashAttribute("drink", drink);
+            return "redirect:/drink/create";
         }
 
         List<DrinkIngredient> drinkIngredients = new ArrayList<>();
@@ -85,21 +88,22 @@ public class DrinkController {
 
             Double convertedQty = qty;
             if (!ingUnit.getCode().equals(ing.getUnitMeasure().getCode())) {
-                convertedQty = conversionService
-                        .convert(qty, ingUnit, ing.getUnitMeasure())
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "Conversão não definida de " + ingUnit.getCode() +
-                                        " para " + ing.getUnitMeasure().getCode()
-                        ));
+                try {
+                    convertedQty = conversionService
+                            .convert(qty, ingUnit, ing.getUnitMeasure())
+                            .orElseThrow();
+                } catch (Exception e) {
+                    redirectAttributes.addFlashAttribute("ingredientError",
+                            "Não é possível converter " + ing.getName() + " para " + ingUnit.getDescription()+ ".");
+                    return "redirect:/drink/create";
+                }
             }
 
             DrinkIngredient di = new DrinkIngredient();
             di.setDrink(drink);
             di.setIngredient(ing);
             di.setQuantity(convertedQty);
-
             di.setUnitMeasure(ing.getUnitMeasure());
-
             drinkIngredients.add(di);
         }
 
@@ -123,20 +127,23 @@ public class DrinkController {
                          @RequestParam(value = "ingredientIds", required = false) List<Long> ingredientIds,
                          @RequestParam(value = "quantities", required = false) List<Double> quantities,
                          @RequestParam(value = "ingredientUnits", required = false) List<String> ingredientUnitCodes,
-                         Model model) {
+                         Model model,
+                         RedirectAttributes redirectAttributes) {
+
+        Long drinkId = drink.getId();
 
         if (ingredientIds == null || ingredientIds.isEmpty() || quantities == null || quantities.isEmpty()) {
-            model.addAttribute("ingredientError", "O drink deve ter pelo menos um ingrediente.");
+            redirectAttributes.addFlashAttribute("ingredientError", "O drink deve ter pelo menos um ingrediente.");
+            return "redirect:/drink/edit/" + drinkId;
         }
 
-        if (bindingResult.hasErrors() || model.containsAttribute("ingredientError")) {
-            model.addAttribute("allIngredients", ingredientService.getAll());
-            model.addAttribute("allUnits", unitService.getAll());
-            return "drink/edit";
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.drink", bindingResult);
+            redirectAttributes.addFlashAttribute("drink", drink);
+            return "redirect:/drink/edit/" + drinkId;
         }
 
         drink.getIngredients().clear();
-
         List<DrinkIngredient> drinkIngredients = new ArrayList<>();
         for (int i = 0; i < ingredientIds.size(); i++) {
             Ingredient ing = ingredientService.getById(ingredientIds.get(i));
@@ -153,21 +160,22 @@ public class DrinkController {
 
             Double convertedQty = qty;
             if (!ingUnit.getCode().equals(ing.getUnitMeasure().getCode())) {
-                convertedQty = conversionService
-                        .convert(qty, ingUnit, ing.getUnitMeasure())
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "Conversão não definida de " + ingUnit.getCode() +
-                                        " para " + ing.getUnitMeasure().getCode()
-                        ));
+                try {
+                    convertedQty = conversionService
+                            .convert(qty, ingUnit, ing.getUnitMeasure())
+                            .orElseThrow();
+                } catch (Exception e) {
+                    redirectAttributes.addFlashAttribute("ingredientError",
+                            "Não é possível converter " + ing.getName() + " para " + ingUnit.getDescription()+ ".");
+                    return "redirect:/drink/edit/" + drinkId;
+                }
             }
 
             DrinkIngredient di = new DrinkIngredient();
             di.setDrink(drink);
             di.setIngredient(ing);
             di.setQuantity(convertedQty);
-
             di.setUnitMeasure(ing.getUnitMeasure());
-
             drinkIngredients.add(di);
         }
 
