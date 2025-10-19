@@ -141,14 +141,12 @@
             <button type="button" id="addIngredientBtn" class="btn btn-outline-light btn-card">Adicionar</button>
           </div>
 
-          <!-- Mensagem de erro do controller -->
           <div class="text-danger mt-2" th:if="${ingredientError}" th:text="${ingredientError}"></div>
           <div class="text-danger mt-2" th:if="${ingredientConversionError}" th:text="${ingredientConversionError}"></div>
 
           <ul id="ingredientSuggestions"></ul>
         </div>
 
-        <!-- Ingredientes já adicionados -->
         <div class="added-ingredients" id="addedIngredients">
           <div class="added-ingredient-item" th:each="di : ${drink.ingredients}">
             <span th:text="${di.ingredient.name} + ' - ' + ${di.quantity} + ' ' + ${di.unitMeasure.code}"></span>
@@ -178,14 +176,12 @@ const quantityInput = document.getElementById('ingredientQuantity');
 const unitSelect = document.getElementById('ingredientUnitSelect');
 const addedIngredientsDiv = document.getElementById('addedIngredients');
 
-// Remover ingrediente
 addedIngredientsDiv.addEventListener('click', (e) => {
   if (e.target.classList.contains('btn-remove')) {
     e.target.parentElement.remove();
   }
 });
 
-// Autocomplete
 searchInput.addEventListener('keyup', () => {
   const query = searchInput.value.toLowerCase();
   suggestionsList.innerHTML = '';
@@ -204,7 +200,6 @@ searchInput.addEventListener('keyup', () => {
   });
 });
 
-// Adicionar ingrediente
 document.getElementById('addIngredientBtn').addEventListener('click', () => {
   if (!selectedIngredient || !quantityInput.value || !unitSelect.value) return;
 

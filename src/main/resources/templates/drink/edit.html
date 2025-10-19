@@ -70,7 +70,6 @@
       <form th:action="@{/drink/update}" th:object="${drink}" method="post" id="drinkForm">
         <input type="hidden" th:field="*{id}">
 
-        <!-- Campos do drink -->
         <div class="mb-3">
           <label class="form-label">Nome do Drink</label>
           <input type="text" th:field="*{name}" class="form-control" placeholder="Ex: Caipirinha" required>
@@ -120,7 +119,6 @@
           </div>
           <ul id="ingredientSuggestions"></ul>
 
-          <!-- Mensagens do controller -->
           <div class="text-danger mt-2" th:if="${ingredientError}" th:text="${ingredientError}"></div>
           <div class="text-danger mt-2" th:if="${ingredientConversionError}" th:text="${ingredientConversionError}"></div>
         </div>
@@ -175,7 +173,6 @@ function createIngredientItem(ingredient, quantity, unit) {
   return div;
 }
 
-// Autocomplete
 searchInput.addEventListener('keyup', () => {
   const query = searchInput.value.toLowerCase();
   suggestionsList.innerHTML = '';
@@ -204,7 +201,6 @@ searchInput.addEventListener('keyup', () => {
   });
 });
 
-// Adicionar ingrediente
 document.getElementById('addIngredientBtn').addEventListener('click', () => {
   if (!selectedIngredient || !quantityInput.value || !unitSelect.value) return;
   const item = createIngredientItem(selectedIngredient, quantityInput.value, unitSelect.value);
@@ -215,14 +211,12 @@ document.getElementById('addIngredientBtn').addEventListener('click', () => {
   selectedIngredient = null;
 });
 
-// Remover ingrediente existente
 addedIngredientsDiv.addEventListener('click', (e) => {
   if (e.target.classList.contains('btn-remove')) {
     e.target.parentElement.remove();
   }
 });
 
-// Validação do formulário
 drinkForm.addEventListener('submit', (e) => {
   if (addedIngredientsDiv.children.length === 0) {
     e.preventDefault();
