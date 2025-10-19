@@ -22,4 +22,8 @@ public class DrinkIngredient {
 
     @Column(nullable = false)
     private Double quantity;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "unit_measure_id")
+    private UnitOfMeasure unitMeasure;
 }

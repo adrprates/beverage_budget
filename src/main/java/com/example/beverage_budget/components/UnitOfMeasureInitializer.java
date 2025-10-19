@@ -16,7 +16,7 @@ public class UnitOfMeasureInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if(unitRepository.count() == 0) {
+        if (unitRepository.count() == 0) {
             unitRepository.save(new UnitOfMeasure("ML", "Mililitros"));
             unitRepository.save(new UnitOfMeasure("L", "Litros"));
             unitRepository.save(new UnitOfMeasure("G", "Gramas"));

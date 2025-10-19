@@ -16,7 +16,6 @@
       z-index: 10; 
       width: 100%; 
     }
-
     #ingredientSuggestions li {
       font-weight: bold;         
       color: black;              
@@ -26,43 +25,14 @@
       list-style: none;
       border-bottom: 1px solid #ccc;
     }
-
-    #ingredientSuggestions li:hover {
+    #ingredientSuggestions li:hover { 
       background-color: #e0e0e0; 
     }
-
-    .ingredient-selector { 
-      display: flex; 
-      gap: 10px; 
-      flex-wrap: wrap; 
-    }
-
-    .ingredient-selector input, .ingredient-selector select { 
-      flex: 1; 
-      min-width: 150px; 
-    }
-
-    .added-ingredient-item { 
-      display: flex; 
-      align-items: center; 
-      justify-content: space-between; 
-      padding: 5px 10px; 
-      background: #2a2a2a; 
-      margin-bottom: 5px; 
-      border-radius: 5px; 
-      color: #fff; 
-    }
-
-    .btn-remove { 
-      background: none; 
-      border: none; 
-      color: #ff6b6b; 
-      cursor: pointer; 
-    }
-
-    .btn-remove:hover { 
-      color: #ff3b3b; 
-    }
+    .ingredient-selector { display: flex; gap: 10px; flex-wrap: wrap; }
+    .ingredient-selector input, .ingredient-selector select { flex: 1; min-width: 150px; }
+    .added-ingredient-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: #2a2a2a; margin-bottom: 5px; border-radius: 5px; color: #fff; }
+    .btn-remove { background: none; border: none; color: #ff6b6b; cursor: pointer; }
+    .btn-remove:hover { color: #ff3b3b; }
   </style>
 </head>
 <body>
@@ -113,7 +83,7 @@
 
         <div class="mb-3">
           <label class="form-label">Unidade de Medida</label>
-          <select th:field="*{unitMeasure.id}" class="form-select" required>
+          <select th:field="*{unitMeasure.id}" id="drinkUnit" class="form-select" required>
             <option value="">Selecione a unidade</option>
             <option th:each="u : ${allUnits}" th:value="${u.id}" th:text="${u.description}" 
                     th:selected="${drink.unitMeasure != null} ? ${u.id == drink.unitMeasure.id} : false">
@@ -141,7 +111,9 @@
           <div class="ingredient-selector">
             <input type="text" id="ingredientSearch" placeholder="Digite o nome do ingrediente..." class="form-control">
             <input type="number" id="ingredientQuantity" placeholder="Quantidade" class="form-control">
-            <input type="text" id="ingredientUnit" placeholder="Unidade" class="form-control" readonly>
+            <select id="ingredientUnitSelect" class="form-control">
+              <option value="">Selecione a unidade</option>
+            </select>
             <button type="button" id="addIngredientBtn" class="btn btn-outline-light btn-card">Adicionar</button>
           </div>
           <ul id="ingredientSuggestions"></ul>
@@ -153,6 +125,7 @@
             <button type="button" class="btn-remove">Remover</button>
             <input type="hidden" name="ingredientIds" th:value="${di.ingredient.id}">
             <input type="hidden" name="quantities" th:value="${di.quantity}">
+            <input type="hidden" name="ingredientUnits" th:value="${di.ingredient.unitMeasure.code}">
           </div>
         </div>
 
@@ -176,25 +149,27 @@ let selectedIngredient = null;
 const searchInput = document.getElementById('ingredientSearch');
 const suggestionsList = document.getElementById('ingredientSuggestions');
 const quantityInput = document.getElementById('ingredientQuantity');
-const unitInput = document.getElementById('ingredientUnit');
+const unitSelect = document.getElementById('ingredientUnitSelect');
 const addedIngredientsDiv = document.getElementById('addedIngredients');
 const ingredientErrorDiv = document.getElementById('ingredientError');
+const drinkUnitSelect = document.getElementById('drinkUnit');
 const drinkForm = document.getElementById('drinkForm');
 
-// Função para criar um novo item de ingrediente
-function createIngredientItem(ingredient, quantity) {
+function createIngredientItem(ingredient, quantity, unit) {
   const div = document.createElement('div');
   div.className = 'added-ingredient-item';
   div.innerHTML = `
-    <span>${ingredient.name} - ${quantity} ${ingredient.unitMeasure.description}</span>
+    <span>${ingredient.name} - ${quantity} ${unit}</span>
     <button type="button" class="btn-remove">Remover</button>
     <input type="hidden" name="ingredientIds" value="${ingredient.id}">
     <input type="hidden" name="quantities" value="${quantity}">
+    <input type="hidden" name="ingredientUnits" value="${unit}">
   `;
+  div.querySelector('.btn-remove').addEventListener('click', () => div.remove());
   return div;
 }
 
-// Autocomplete
+// Autocomplete de ingredientes
 searchInput.addEventListener('keyup', () => {
   const query = searchInput.value.toLowerCase();
   suggestionsList.innerHTML = '';
@@ -206,25 +181,25 @@ searchInput.addEventListener('keyup', () => {
     li.addEventListener('click', () => {
       selectedIngredient = i;
       searchInput.value = i.name;
-      unitInput.value = i.unitMeasure.description;
+      unitSelect.innerHTML = `<option value="${i.unitMeasure.code}" selected>${i.unitMeasure.description}</option>`;
       suggestionsList.innerHTML = '';
     });
     suggestionsList.appendChild(li);
   });
 });
 
-// Adicionar ingrediente
+// Adicionar novo ingrediente
 document.getElementById('addIngredientBtn').addEventListener('click', () => {
-  if (!selectedIngredient || !quantityInput.value) return;
-  const item = createIngredientItem(selectedIngredient, quantityInput.value);
+  if (!selectedIngredient || !quantityInput.value || !unitSelect.value) return;
+  const item = createIngredientItem(selectedIngredient, quantityInput.value, unitSelect.value);
   addedIngredientsDiv.appendChild(item);
   searchInput.value = '';
   quantityInput.value = '';
-  unitInput.value = '';
+  unitSelect.innerHTML = '';
   selectedIngredient = null;
 });
 
-// Remover ingrediente (delegação de eventos funciona para existentes e adicionados)
+// Remover ingrediente existente
 addedIngredientsDiv.addEventListener('click', (e) => {
   if (e.target.classList.contains('btn-remove')) {
     e.target.parentElement.remove();

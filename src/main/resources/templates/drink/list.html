@@ -61,7 +61,7 @@
           <ul class="drink-ingredient-list">
             <li th:each="di : ${drink.ingredients}">
               <span th:text="${di.ingredient.name}"></span> - 
-              <span th:text="${di.quantity}"></span> <span th:text="${di.ingredient.unitMeasure.description}"></span>
+              <span th:text="${T(com.example.beverage_budget.util.UnitFormatter).formatQuantity(di.quantity, di.unitMeasure)}"></td>
             </li>
           </ul>
         </li>

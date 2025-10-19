@@ -6,6 +6,7 @@ import com.example.beverage_budget.model.Ingredient;
 import com.example.beverage_budget.model.UnitOfMeasure;
 import com.example.beverage_budget.service.DrinkService;
 import com.example.beverage_budget.service.IngredientService;
+import com.example.beverage_budget.service.UnitConversionService;
 import com.example.beverage_budget.service.UnitOfMeasureService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +31,13 @@ public class DrinkController {
     @Autowired
     private UnitOfMeasureService unitService;
 
+    @Autowired
+    private UnitConversionService conversionService;
+
     @GetMapping({"", "/"})
     public String list(@RequestParam(required = false) String search, Model model) {
-        List<Drink> drinks;
-        if (search != null && !search.isEmpty()) {
-            drinks = drinkService.searchByName(search);
-        } else {
-            drinks = drinkService.getAll();
-        }
+        List<Drink> drinks = (search != null && !search.isEmpty()) ?
+                drinkService.searchByName(search) : drinkService.getAll();
         model.addAttribute("list", drinks);
         model.addAttribute("search", search);
         return "drink/list";
@@ -56,14 +56,8 @@ public class DrinkController {
                        BindingResult bindingResult,
                        @RequestParam(value = "ingredientIds", required = false) List<Long> ingredientIds,
                        @RequestParam(value = "quantities", required = false) List<Double> quantities,
+                       @RequestParam(value = "ingredientUnits", required = false) List<String> ingredientUnitCodes,
                        Model model) {
-
-        if (drink.getUnitMeasure() != null && drink.getUnitMeasure().getId() != null) {
-            UnitOfMeasure um = unitService.getById(drink.getUnitMeasure().getId());
-            drink.setUnitMeasure(um);
-        } else {
-            bindingResult.rejectValue("unitMeasure", "NotNull", "Unidade de medida é obrigatória");
-        }
 
         if (ingredientIds == null || ingredientIds.isEmpty() || quantities == null || quantities.isEmpty()) {
             model.addAttribute("ingredientError", "O drink deve ter pelo menos um ingrediente.");
@@ -80,14 +74,36 @@ public class DrinkController {
             Ingredient ing = ingredientService.getById(ingredientIds.get(i));
             Double qty = quantities.get(i);
 
+            final String unitCode = (ingredientUnitCodes != null && ingredientUnitCodes.size() > i)
+                    ? ingredientUnitCodes.get(i)
+                    : ing.getUnitMeasure().getCode();
+
+            UnitOfMeasure ingUnit = unitService.getAll().stream()
+                    .filter(u -> u.getCode().equalsIgnoreCase(unitCode))
+                    .findFirst()
+                    .orElse(ing.getUnitMeasure());
+
+            Double convertedQty = qty;
+            if (!ingUnit.getCode().equals(ing.getUnitMeasure().getCode())) {
+                convertedQty = conversionService
+                        .convert(qty, ingUnit, ing.getUnitMeasure())
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "Conversão não definida de " + ingUnit.getCode() +
+                                        " para " + ing.getUnitMeasure().getCode()
+                        ));
+            }
+
             DrinkIngredient di = new DrinkIngredient();
             di.setDrink(drink);
             di.setIngredient(ing);
-            di.setQuantity(qty);
+            di.setQuantity(convertedQty);
+
+            di.setUnitMeasure(ing.getUnitMeasure());
+
             drinkIngredients.add(di);
         }
-        drink.setIngredients(drinkIngredients);
 
+        drink.setIngredients(drinkIngredients);
         drinkService.save(drink);
         return "redirect:/drink";
     }
@@ -106,16 +122,9 @@ public class DrinkController {
                          BindingResult bindingResult,
                          @RequestParam(value = "ingredientIds", required = false) List<Long> ingredientIds,
                          @RequestParam(value = "quantities", required = false) List<Double> quantities,
+                         @RequestParam(value = "ingredientUnits", required = false) List<String> ingredientUnitCodes,
                          Model model) {
 
-        if (drink.getUnitMeasure() != null && drink.getUnitMeasure().getId() != null) {
-            UnitOfMeasure um = unitService.getById(drink.getUnitMeasure().getId());
-            drink.setUnitMeasure(um);
-        } else {
-            bindingResult.rejectValue("unitMeasure", "NotNull", "Unidade de medida é obrigatória");
-        }
-
-        // 🧠 NOVA VALIDAÇÃO: não pode salvar sem ingredientes
         if (ingredientIds == null || ingredientIds.isEmpty() || quantities == null || quantities.isEmpty()) {
             model.addAttribute("ingredientError", "O drink deve ter pelo menos um ingrediente.");
         }
@@ -127,19 +136,42 @@ public class DrinkController {
         }
 
         drink.getIngredients().clear();
+
         List<DrinkIngredient> drinkIngredients = new ArrayList<>();
         for (int i = 0; i < ingredientIds.size(); i++) {
             Ingredient ing = ingredientService.getById(ingredientIds.get(i));
             Double qty = quantities.get(i);
 
+            final String unitCode = (ingredientUnitCodes != null && ingredientUnitCodes.size() > i)
+                    ? ingredientUnitCodes.get(i)
+                    : ing.getUnitMeasure().getCode();
+
+            UnitOfMeasure ingUnit = unitService.getAll().stream()
+                    .filter(u -> u.getCode().equalsIgnoreCase(unitCode))
+                    .findFirst()
+                    .orElse(ing.getUnitMeasure());
+
+            Double convertedQty = qty;
+            if (!ingUnit.getCode().equals(ing.getUnitMeasure().getCode())) {
+                convertedQty = conversionService
+                        .convert(qty, ingUnit, ing.getUnitMeasure())
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "Conversão não definida de " + ingUnit.getCode() +
+                                        " para " + ing.getUnitMeasure().getCode()
+                        ));
+            }
+
             DrinkIngredient di = new DrinkIngredient();
             di.setDrink(drink);
             di.setIngredient(ing);
-            di.setQuantity(qty);
+            di.setQuantity(convertedQty);
+
+            di.setUnitMeasure(ing.getUnitMeasure());
+
             drinkIngredients.add(di);
         }
-        drink.setIngredients(drinkIngredients);
 
+        drink.setIngredients(drinkIngredients);
         drinkService.save(drink);
         return "redirect:/drink";
     }
@@ -153,8 +185,7 @@ public class DrinkController {
     @GetMapping("/{drinkId}/remove-ingredient/{ingredientId}")
     public String removeIngredient(@PathVariable Long drinkId,
                                    @PathVariable Long ingredientId) {
-        drinkService.removeIngredient(drinkId,
-                ingredientId);
+        drinkService.removeIngredient(drinkId, ingredientId);
         return "redirect:/drink/edit/" + drinkId;
     }
 }
