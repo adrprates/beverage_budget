@@ -68,4 +68,11 @@ public class DrinkImpl implements DrinkService {
     public List<Drink> searchByName(String name) {
         return drinkRepository.findByNameContainingIgnoreCase(name);
     }
+
+    @Override
+    public Drink getByIdWithIngredients(Long id) {
+        return drinkRepository.findByIdWithIngredients(id)
+                .orElseThrow(() -> new RuntimeException("Drink not found by id: " + id));
+    }
+
 }

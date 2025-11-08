@@ -1,0 +1,173 @@
+/* ======== BASE ======== */
+body {
+  background-color: #121212;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  padding-top: 70px;
+}
+
+/* ======== NAVBAR ======== */
+.custom-navbar {
+  background-color: #1f1f1f;
+  border-bottom: 1px solid #333;
+}
+
+/* ======== CONTAINERS ======== */
+.dashboard-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  margin-top: 40px;
+}
+
+.card {
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+  padding: 30px;
+}
+
+/* ======== TITLES & TEXT ======== */
+h1, h2, h3, h4, h5 {
+  font-weight: 600;
+}
+
+.highlight {
+  color: #e5c07b;
+}
+
+.form-label {
+  color: #ddd;
+  font-weight: 500;
+}
+
+/* ======== BUTTONS ======== */
+.btn-card, .btn-outline-light {
+  border-color: #e5c07b;
+  color: #e5c07b;
+  transition: all 0.3s;
+}
+
+.btn-card:hover, .btn-outline-light:hover {
+  background-color: #e5c07b;
+  color: #121212;
+}
+
+.btn-success {
+  background-color: #28a745;
+  border: none;
+}
+
+.btn-success:hover {
+  background-color: #34d058;
+  color: #121212;
+}
+
+/* ======== BUTTON: CALCULAR PROPORCIONALIDADE ======== */
+.btn-proportion {
+  background-color: #007bff;
+  color: #fff;
+  border: 1px solid #006fe6;
+  transition: all 0.3s ease;
+}
+
+.btn-proportion:hover {
+  background-color: #3399ff;
+  border-color: #3399ff;
+  color: #121212;
+}
+
+/* ======== FORM FIELDS ======== */
+.form-control, .form-select {
+  background-color: #2b2b2b;
+  border: 1px solid #3a3a3a;
+  color: #fff;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #e5c07b;
+  box-shadow: 0 0 5px rgba(229, 192, 123, 0.5);
+}
+
+/* ======== ADDED ITEMS (Drinks, Ingredientes, Recursos) ======== */
+.added-item {
+  background-color: #2b2b2b;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-left: 10px;
+  transition: color 0.3s ease;
+}
+
+.btn-remove:hover {
+  color: #ff8787;
+}
+
+/* ======== TABLES (Ingredientes Automáticos) ======== */
+.table-dark {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  border-color: #333;
+}
+
+.table-dark thead {
+  background-color: #2a2a2a;
+}
+
+.table-dark th, .table-dark td {
+  vertical-align: middle;
+}
+
+.table-dark input {
+  background-color: #2b2b2b;
+  border: 1px solid #3a3a3a;
+  color: #fff;
+  text-align: center;
+}
+
+.table-dark input:focus {
+  border-color: #e5c07b;
+  box-shadow: 0 0 3px rgba(229, 192, 123, 0.5);
+}
+
+/* ======== SECTION SEPARATORS ======== */
+hr {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 30px 0;
+}
+
+/* ======== TOTALS ======== */
+.text-end h5 {
+  margin-bottom: 8px;
+  color: #e5c07b;
+  font-weight: 600;
+}
+
+/* ======== RESPONSIVE ======== */
+@media (max-width: 768px) {
+  .added-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-remove {
+    margin-top: 5px;
+  }
+
+  .table-dark td input {
+    width: 80px;
+  }
+}

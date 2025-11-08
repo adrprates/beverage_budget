@@ -12,4 +12,5 @@ public interface DrinkService {
     List<Drink> searchByName(String name);
 
     void removeIngredient(Long drinkId, Long ingredientId);
+    Drink getByIdWithIngredients(Long id);
 }

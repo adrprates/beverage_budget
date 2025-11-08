@@ -7,10 +7,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface BudgetIngredientRepository extends JpaRepository<BudgetIngredient, Long> {
+    List<BudgetIngredient> findByBudgetId(Long budgetId);
+
     @Modifying
-    @Query("DELETE FROM BudgetDrink bd WHERE bd.budget.id = :budgetId")
+    @Query("DELETE FROM BudgetIngredient bi WHERE bi.budget.id = :budgetId")
     void deleteByBudgetId(@Param("budgetId") Long budgetId);
 
 }

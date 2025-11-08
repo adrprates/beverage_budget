@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/drink")
@@ -195,5 +197,24 @@ public class DrinkController {
                                    @PathVariable Long ingredientId) {
         drinkService.removeIngredient(drinkId, ingredientId);
         return "redirect:/drink/edit/" + drinkId;
+    }
+
+    @GetMapping("/{id}/ingredients")
+    @ResponseBody
+    public List<Map<String, Object>> getIngredients(@PathVariable Long id) {
+        Drink drink = drinkService.getById(id);
+        List<Map<String, Object>> list = new ArrayList<>();
+
+        if (drink.getIngredients() != null) {
+            for (DrinkIngredient di : drink.getIngredients()) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("ingredientId", di.getIngredient().getId());
+                item.put("ingredientName", di.getIngredient().getName());
+                item.put("quantity", di.getQuantity());
+                item.put("unitMeasure", di.getUnitMeasure() != null ? di.getUnitMeasure().getDescription() : "unidade");
+                list.add(item);
+            }
+        }
+        return list;
     }
 }

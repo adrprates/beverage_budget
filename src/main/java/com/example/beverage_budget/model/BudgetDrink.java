@@ -24,10 +24,4 @@ public class BudgetDrink {
 
     @Column(name = "quantity", nullable = false)
     private BigDecimal quantity;
-
-    @Column(name = "unit_price", nullable = false)
-    private BigDecimal unitPrice;
-
-    @Column(name = "total_price", nullable = false)
-    private BigDecimal totalPrice;
 }
