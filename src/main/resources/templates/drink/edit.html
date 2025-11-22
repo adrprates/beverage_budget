@@ -3,68 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prates Bar - Editar Drink</title>
+  <title>Editar Drink</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
   <link rel="stylesheet" th:href="@{/drink/save.css}">
+
   <style>
-    #ingredientSuggestions { 
-      max-height: 150px; 
-      overflow-y: auto; 
-      margin-top: 5px; 
-      position: absolute; 
-      z-index: 10; 
-      width: 100%; 
-    }
-    #ingredientSuggestions li {
-      font-weight: bold;         
-      color: black;              
-      background-color: white;  
-      cursor: pointer;           
-      padding: 5px 10px;
-      list-style: none;
-      border-bottom: 1px solid #ccc;
-    }
-    #ingredientSuggestions li:hover { 
-      background-color: #e0e0e0; 
-    }
-    .ingredient-selector { display: flex; gap: 10px; flex-wrap: wrap; }
-    .ingredient-selector input, .ingredient-selector select { flex: 1; min-width: 150px; }
-    .added-ingredient-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: #2a2a2a; margin-bottom: 5px; border-radius: 5px; color: #fff; }
-    .btn-remove { background: none; border: none; color: #ff6b6b; cursor: pointer; }
-    .btn-remove:hover { color: #ff3b3b; }
-    .text-danger { margin-top: 5px; }
+      #ingredientSuggestions { 
+          max-height: 150px;
+          overflow-y: auto;
+          margin-top: 5px;
+          position: absolute;
+          z-index: 10;
+          width: 100%;
+          background: #fff;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+      }
+
+      #ingredientSuggestions li {
+          font-weight: bold;
+          color: #000;
+          background-color: #fff;
+          cursor: pointer;
+          padding: 8px 10px;
+          list-style: none;
+          border-bottom: 1px solid #ddd;
+      }
+
+      #ingredientSuggestions li:hover { 
+          background-color: #e0e0e0; 
+      }
+
+      .ingredient-selector { 
+          display: flex; 
+          gap: 10px; 
+          flex-wrap: wrap;
+          margin-bottom: 15px;
+      }
+
+      .ingredient-selector input, 
+      .ingredient-selector select { 
+          flex: 1; 
+          min-width: 150px; 
+      }
+
+      .added-ingredient-item { 
+          display: flex; 
+          align-items: center; 
+          justify-content: space-between; 
+          background: #fff;
+          border: 1px solid #ddd;
+          padding: 8px 12px; 
+          border-radius: 6px; 
+          margin-bottom: 8px; 
+          color: #333; 
+      }
+
+      .btn-remove-primary {
+            background: #ad2222;
+            color: #fff;
+            border: 1px solid #ad2222;
+            transition: 0.2s ease;
+            padding: 2px 10px;        
+            border-radius: 6px;        
+            font-size: 0.85rem;        
+        }
+
+        .btn-remove-primary:hover {
+            background: #fff;
+            color: #ad2222;
+            border: 1px solid #ad2222;
+        }
+
+      .text-danger { 
+          margin-top: 5px;
+      }
   </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark custom-navbar fixed-top">
+<nav class="navbar navbar-expand-lg bg-white border-bottom">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}">
-      <i class="bi bi-stars me-2"></i> Prates Bar
+
+    <a class="navbar-brand fw-bold" th:href="@{/}">
+      Prates Bar
     </a>
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
       <span class="navbar-toggler-icon"></span>
     </button>
+
     <div class="collapse navbar-collapse" id="menu">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link active" th:href="@{/ingredient}"><i class="bi bi-box-seam"></i> Ingredientes</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/drink}"><i class="bi bi-cup-straw"></i> Drinks</a></li>
-        <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-people"></i> Proporções</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/resource}"><i class="bi bi-stars"></i> Recursos</a></li>
-        <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-cash-coin"></i> Orçamentos</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/ingredient}">Ingredientes</a></li>
+        <li class="nav-item"><a class="nav-link active" th:href="@{/drink}">Drinks</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">Proporções</a></li>
+        <li class="nav-item"><a class="nav-link" th:href="@{/resource}">Recursos</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">Orçamentos</a></li>
       </ul>
     </div>
+
   </div>
 </nav>
 
-<div class="container dashboard-container">
-  <h1 class="text-center mb-4">
-    <span style="color:#ffffff;">Editar</span> <span class="highlight">Drink</span>
-  </h1>
+<div class="container mt-5 pt-4">
 
-  <div class="card dashboard-card mb-4">
+  <h2 class="text-center mb-4">Editar Drink</h2>
+
+  <div class="card simple-card mb-4">
     <div class="card-body">
+
       <h5 class="card-title mb-3">Informações do Drink</h5>
 
       <form th:action="@{/drink/update}" th:object="${drink}" method="post" id="drinkForm">
@@ -72,13 +123,13 @@
 
         <div class="mb-3">
           <label class="form-label">Nome do Drink</label>
-          <input type="text" th:field="*{name}" class="form-control" placeholder="Ex: Caipirinha" required>
+          <input type="text" th:field="*{name}" class="form-control" required>
           <div class="text-danger" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
         </div>
 
         <div class="mb-3">
           <label class="form-label">Quantidade Total</label>
-          <input type="number" th:field="*{quantity}" class="form-control" placeholder="Ex: 500" required>
+          <input type="number" th:field="*{quantity}" class="form-control" required>
           <div class="text-danger" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></div>
         </div>
 
@@ -86,16 +137,15 @@
           <label class="form-label">Unidade de Medida</label>
           <select th:field="*{unitMeasure.id}" class="form-select" required>
             <option value="">Selecione a unidade</option>
-            <option th:each="u : ${allUnits}" th:value="${u.id}" th:text="${u.description}" 
-                    th:selected="${drink.unitMeasure != null} ? ${u.id == drink.unitMeasure.id} : false">
+            <option th:each="u : ${allUnits}" th:value="${u.id}" th:text="${u.description}"
+              th:selected="${drink.unitMeasure != null} ? ${u.id == drink.unitMeasure.id} : false">
             </option>
           </select>
-          <div class="text-danger" th:if="${#fields.hasErrors('unitMeasure')}" th:errors="*{unitMeasure}"></div>
         </div>
 
         <div class="mb-3">
           <label class="form-label">Porções</label>
-          <input type="number" th:field="*{servings}" class="form-control" placeholder="Ex: 5" required>
+          <input type="number" th:field="*{servings}" class="form-control" required>
           <div class="text-danger" th:if="${#fields.hasErrors('servings')}" th:errors="*{servings}"></div>
         </div>
 
@@ -105,18 +155,21 @@
         </div>
 
         <hr>
+
         <h5 class="card-title mb-3">Ingredientes</h5>
 
         <div class="mb-3">
-          <label for="ingredientSearch" class="form-label">Adicionar Ingrediente</label>
+          <label class="form-label">Adicionar Ingrediente</label>
+
           <div class="ingredient-selector">
-            <input type="text" id="ingredientSearch" placeholder="Digite o nome do ingrediente..." class="form-control">
-            <input type="number" id="ingredientQuantity" placeholder="Quantidade" class="form-control">
+            <input type="text" id="ingredientSearch" class="form-control" placeholder="Buscar ingrediente...">
+            <input type="number" id="ingredientQuantity" class="form-control" placeholder="Quantidade">
             <select id="ingredientUnitSelect" class="form-control">
-              <option value="">Selecione a unidade</option>
+              <option value="">Unidade</option>
             </select>
-            <button type="button" id="addIngredientBtn" class="btn btn-outline-light btn-card">Adicionar</button>
+            <button type="button" id="addIngredientBtn" class="btn btn-primary">Adicionar</button>
           </div>
+
           <ul id="ingredientSuggestions"></ul>
 
           <div class="text-danger mt-2" th:if="${ingredientError}" th:text="${ingredientError}"></div>
@@ -126,7 +179,9 @@
         <div class="added-ingredients" id="addedIngredients">
           <div th:each="di : ${drink.ingredients}" class="added-ingredient-item">
             <span th:text="|${di.ingredient.name} - ${di.quantity} ${di.unitMeasure.code}|"></span>
-            <button type="button" class="btn-remove">Remover</button>
+
+            <button type="button" class="btn-remove-primary">Remover</button>
+
             <input type="hidden" name="ingredientIds" th:value="${di.ingredient.id}">
             <input type="hidden" name="quantities" th:value="${di.quantity}">
             <input type="hidden" name="ingredientUnits" th:value="${di.unitMeasure.code}">
@@ -138,93 +193,94 @@
         </div>
 
         <div class="text-center mt-4">
-          <button type="submit" class="btn btn-outline-light btn-card">Atualizar Drink</button>
-          <a th:href="@{/drink}" class="btn btn-secondary ms-2">Cancelar</a>
+          <button type="submit" class="btn btn-primary px-4">Atualizar</button>
+          <a th:href="@{/drink}" class="btn btn-secondary px-4 ms-2">Cancelar</a>
         </div>
+
       </form>
     </div>
   </div>
+
 </div>
 
 <script th:inline="javascript">
-const ingredients = /*[[${allIngredients}]]*/ [];
-const allUnits = /*[[${allUnits}]]*/ [];
-let selectedIngredient = null;
+  const ingredients = /*[[${allIngredients}]]*/ [];
+  const allUnits = /*[[${allUnits}]]*/ [];
 
-const searchInput = document.getElementById('ingredientSearch');
-const suggestionsList = document.getElementById('ingredientSuggestions');
-const quantityInput = document.getElementById('ingredientQuantity');
-const unitSelect = document.getElementById('ingredientUnitSelect');
-const addedIngredientsDiv = document.getElementById('addedIngredients');
-const ingredientErrorFront = document.getElementById('ingredientErrorFront');
-const drinkForm = document.getElementById('drinkForm');
+  let selectedIngredient = null;
 
-function createIngredientItem(ingredient, quantity, unit) {
-  const div = document.createElement('div');
-  div.className = 'added-ingredient-item';
-  div.innerHTML = `
-    <span>${ingredient.name} - ${quantity} ${unit}</span>
-    <button type="button" class="btn-remove">Remover</button>
-    <input type="hidden" name="ingredientIds" value="${ingredient.id}">
-    <input type="hidden" name="quantities" value="${quantity}">
-    <input type="hidden" name="ingredientUnits" value="${unit}">
-  `;
-  div.querySelector('.btn-remove').addEventListener('click', () => div.remove());
-  return div;
-}
+  const searchInput = document.getElementById('ingredientSearch');
+  const suggestionsList = document.getElementById('ingredientSuggestions');
+  const quantityInput = document.getElementById('ingredientQuantity');
+  const unitSelect = document.getElementById('ingredientUnitSelect');
+  const addedIngredientsDiv = document.getElementById('addedIngredients');
+  const ingredientErrorFront = document.getElementById('ingredientErrorFront');
+  const drinkForm = document.getElementById('drinkForm');
 
-searchInput.addEventListener('keyup', () => {
-  const query = searchInput.value.toLowerCase();
-  suggestionsList.innerHTML = '';
-  if (!query) return;
+  function createIngredientItem(ingredient, qty, unit) {
+    const div = document.createElement('div');
+    div.className = 'added-ingredient-item';
+    div.innerHTML = `
+      <span>${ingredient.name} - ${qty} ${unit}</span>
+      <button type="button" class="btn-remove-primary">Remover</button>
+      <input type="hidden" name="ingredientIds" value="${ingredient.id}">
+      <input type="hidden" name="quantities" value="${qty}">
+      <input type="hidden" name="ingredientUnits" value="${unit}">
+    `;
+    div.querySelector('.btn-remove-primary').addEventListener('click', () => div.remove());
+    return div;
+  }
 
-  const filtered = ingredients.filter(i => i.name.toLowerCase().includes(query));
-  filtered.forEach(i => {
-    const li = document.createElement('li');
-    li.textContent = i.name;
-    li.addEventListener('click', () => {
-      selectedIngredient = i;
-      searchInput.value = i.name;
+  searchInput.addEventListener('keyup', () => {
+    const query = searchInput.value.toLowerCase();
+    suggestionsList.innerHTML = '';
+    if (!query) return;
 
-      unitSelect.innerHTML = '<option value="">Selecione a unidade</option>';
-      allUnits.forEach(u => {
-        const option = document.createElement('option');
-        option.value = u.code;
-        option.textContent = u.description;
-        if(u.code === i.unitMeasure.code) option.selected = true;
-        unitSelect.appendChild(option);
+    const filtered = ingredients.filter(i => i.name.toLowerCase().includes(query));
+    filtered.forEach(i => {
+      const li = document.createElement('li');
+      li.textContent = i.name;
+      li.addEventListener('click', () => {
+        selectedIngredient = i;
+        searchInput.value = i.name;
+
+        unitSelect.innerHTML = '<option value="">Unidade</option>';
+        allUnits.forEach(u => {
+          const option = document.createElement('option');
+          option.value = u.code;
+          option.textContent = u.description;
+          if (u.code === i.unitMeasure.code) option.selected = true;
+          unitSelect.appendChild(option);
+        });
+
+        suggestionsList.innerHTML = '';
       });
-
-      suggestionsList.innerHTML = '';
+      suggestionsList.appendChild(li);
     });
-    suggestionsList.appendChild(li);
   });
-});
 
-document.getElementById('addIngredientBtn').addEventListener('click', () => {
-  if (!selectedIngredient || !quantityInput.value || !unitSelect.value) return;
-  const item = createIngredientItem(selectedIngredient, quantityInput.value, unitSelect.value);
-  addedIngredientsDiv.appendChild(item);
-  searchInput.value = '';
-  quantityInput.value = '';
-  unitSelect.innerHTML = '';
-  selectedIngredient = null;
-});
+  document.getElementById('addIngredientBtn').addEventListener('click', () => {
+    if (!selectedIngredient || !quantityInput.value || !unitSelect.value) return;
+    const item = createIngredientItem(selectedIngredient, quantityInput.value, unitSelect.value);
+    addedIngredientsDiv.appendChild(item);
+    searchInput.value = '';
+    quantityInput.value = '';
+    unitSelect.innerHTML = '';
+    selectedIngredient = null;
+  });
 
-addedIngredientsDiv.addEventListener('click', (e) => {
-  if (e.target.classList.contains('btn-remove')) {
-    e.target.parentElement.remove();
-  }
-});
+  addedIngredientsDiv.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn-remove-primary')) {
+      e.target.parentElement.remove();
+    }
+  });
 
-drinkForm.addEventListener('submit', (e) => {
-  if (addedIngredientsDiv.children.length === 0) {
-    e.preventDefault();
-    ingredientErrorFront.style.display = 'block';
-  } else {
-    ingredientErrorFront.style.display = 'none';
-  }
-});
+  drinkForm.addEventListener('submit', (e) => {
+    if (addedIngredientsDiv.children.length === 0) {
+      e.preventDefault();
+      ingredientErrorFront.style.display = 'block';
+    }
+  });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
