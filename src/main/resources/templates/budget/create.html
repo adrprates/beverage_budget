@@ -174,28 +174,6 @@ function formatCurrency(value) {
     return `R$ ${parseFloat(value || 0).toFixed(2).replace('.', ',')}`;
 }
 
-function convertToBaseUnit(quantity, unit) {
-    unit = unit.toLowerCase();
-    switch (unit) {
-        case 'l': return quantity * 1000;
-        case 'ml': return quantity;
-        case 'kg': return quantity * 1000;
-        case 'g': return quantity;
-        default: return quantity;
-    }
-}
-
-function convertVolumeToBase(volume, unit) {
-    unit = unit.toLowerCase();
-    switch (unit) {
-        case 'l': return volume * 1000;
-        case 'ml': return volume;
-        case 'kg': return volume * 1000;
-        case 'g': return volume;
-        default: return volume;
-    }
-}
-
 function updateTotals() {
     let ingredientTotal = 0;
 
@@ -251,95 +229,52 @@ async function refreshAutoIngredients() {
     const ids = [...document.getElementsByName('drinkIds')].map(i => i.value);
     const qtys = [...document.getElementsByName('drinkQuantities')].map(i => parseFloat(i.value));
 
+    if (!ids.length) return;
+
     const tbody = document.getElementById('autoIngredientsTable');
     tbody.innerHTML = '';
 
-    const merged = {};
+    const payload = ids.map((id, idx) => ({ drinkId: id, quantity: qtys[idx] }));
 
-    for (let i = 0; i < ids.length; i++) {
-        const id = ids[i];
-        const drinkQty = qtys[i];
+    try {
+        const res = await fetch('/drink/calculate-ingredients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Erro ao calcular ingredientes');
 
-        try {
-            const res = await fetch(`/drink/${id}/budget-ingredients`);
-            if (!res.ok) continue;
+        const list = await res.json();
 
-            const list = await res.json();
+        list.forEach(ing => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${ing.ingredientName}</td>
+                <td>${parseFloat(ing.quantity).toFixed(2)} ${ing.unitMeasure}</td>
+                <td>
+                    <input class="form-control form-control-sm units"
+                           type="number" min="0" step="1"
+                           value="${ing.unitsNeeded}">
+                </td>
+                <td>
+                    <input class="form-control form-control-sm unit-price"
+                           type="number" value="${ing.unitPrice || 0}" min="0" step="0.01">
+                </td>
+                <td>
+                    <span class="total-display">${formatCurrency(ing.totalPrice || 0)}</span>
+                    <input class="total" type="hidden" value="${ing.totalPrice || 0}">
+                </td>
+            `;
+            tbody.appendChild(row);
 
-            list.forEach(ing => {
-                const ingId = ing.ingredientId;
-                const name = ing.ingredientName;
-                const unit = ing.unitMeasure;
-                const qtyPerDrink = parseFloat(ing.quantity);
-                const volume = parseFloat(ing.ingredientVolume);
+            row.querySelector('.units').addEventListener('input', () => updateRowTotal(row));
+            row.querySelector('.unit-price').addEventListener('input', () => updateRowTotal(row));
+        });
 
-                const totalBaseQty = convertToBaseUnit(qtyPerDrink, unit) * drinkQty;
-                const volumeBase = convertVolumeToBase(volume, unit);
-
-                if (!merged[ingId]) {
-                    merged[ingId] = {
-                        id: ingId,
-                        name,
-                        unit,
-                        totalBaseQty,
-                        volumeBase
-                    };
-                } else {
-                    merged[ingId].totalBaseQty += totalBaseQty;
-                }
-            });
-
-        } catch (error) {
-            console.error("Erro:", error);
-        }
+        updateTotals();
+    } catch (err) {
+        console.error(err);
     }
-
-    Object.values(merged).forEach(i => {
-
-        const unitsNeeded = Math.ceil(i.totalBaseQty / i.volumeBase);
-
-        let finalQuantity = i.totalBaseQty;
-
-        if (i.unit.toLowerCase() === "l") finalQuantity = i.totalBaseQty / 1000;
-        if (i.unit.toLowerCase() === "kg") finalQuantity = i.totalBaseQty / 1000;
-
-        finalQuantity = finalQuantity.toFixed(2);
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-
-            <td>${i.name}</td>
-
-            <!-- QUANTIDADE FINAL -->
-            <td>${finalQuantity} ${i.unit}</td>
-
-            <!-- UNIDADES (embalagens) -->
-            <td>
-                <input class="form-control form-control-sm units"
-                       type="number" min="0" step="1"
-                       value="${unitsNeeded}">
-            </td>
-
-            <!-- VALOR UNITÁRIO (sem "un") -->
-            <td>
-                <input class="form-control form-control-sm unit-price"
-                       type="number" value="0.00" min="0" step="0.01">
-            </td>
-
-            <!-- TOTAL POR INGREDIENTE -->
-            <td>
-                <span class="total-display">R$ 0,00</span>
-                <input class="total" type="hidden" value="0">
-            </td>
-        `;
-
-        tbody.appendChild(row);
-
-        row.querySelector('.units').addEventListener('input', () => updateRowTotal(row));
-        row.querySelector('.unit-price').addEventListener('input', () => updateRowTotal(row));
-    });
-
-    updateTotals();
 }
 </script>
 

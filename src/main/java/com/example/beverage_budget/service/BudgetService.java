@@ -1,6 +1,8 @@
 package com.example.beverage_budget.service;
 
+import com.example.beverage_budget.dto.DrinkDto;
 import com.example.beverage_budget.model.Budget;
+import com.example.beverage_budget.model.BudgetIngredient;
 
 import java.util.List;
 
@@ -13,4 +15,5 @@ public interface BudgetService {
 
     void calculateTotals(Budget budget);
     void applyDrinkProportion(Budget budget, int targetServings);
+    List<BudgetIngredient> calculateIngredientsFromDrinks(List<DrinkDto> drinks);
 }

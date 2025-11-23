@@ -1,5 +1,6 @@
 package com.example.beverage_budget.service.impl;
 
+import com.example.beverage_budget.dto.DrinkDto;
 import com.example.beverage_budget.enums.BudgetStatus;
 import com.example.beverage_budget.model.*;
 import com.example.beverage_budget.repository.BudgetDrinkRepository;
@@ -7,13 +8,18 @@ import com.example.beverage_budget.repository.BudgetIngredientRepository;
 import com.example.beverage_budget.repository.BudgetRepository;
 import com.example.beverage_budget.repository.BudgetResourceRepository;
 import com.example.beverage_budget.service.BudgetService;
+import com.example.beverage_budget.service.DrinkService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +30,9 @@ public class BudgetImpl implements BudgetService {
     private final BudgetDrinkRepository budgetDrinkRepository;
     private final BudgetIngredientRepository budgetIngredientRepository;
     private final BudgetResourceRepository budgetResourceRepository;
+
+    @Autowired
+    private DrinkService drinkService;
 
     @Override
     @Transactional(readOnly = true)
@@ -164,5 +173,72 @@ public class BudgetImpl implements BudgetService {
         calculateTotals(budget);
 
         budgetRepository.save(budget);
+    }
+
+    @Override
+    public List<BudgetIngredient> calculateIngredientsFromDrinks(List<DrinkDto> drinks) {
+        if (drinks == null || drinks.isEmpty()) return Collections.emptyList();
+
+        Map<Long, BudgetIngredient> merged = new HashMap<>();
+
+        for (DrinkDto dto : drinks) {
+            Drink drink = drinkService.getByIdWithIngredients(dto.getDrinkId());
+            int drinkQty = dto.getQuantity();
+
+            for (DrinkIngredient di : drink.getIngredients()) {
+                Ingredient ing = di.getIngredient();
+                String unit = ing.getUnitMeasure().getCode();
+                double qtyPerDrink = di.getQuantity().doubleValue();
+                double volume = ing.getVolume().doubleValue();
+
+                double totalBaseQty = convertToBase(qtyPerDrink, unit) * drinkQty;
+                double volumeBase = convertToBase(volume, unit);
+
+                BudgetIngredient bi = merged.computeIfAbsent(
+                        ing.getId(),
+                        id -> {
+                            BudgetIngredient x = new BudgetIngredient();
+                            x.setIngredient(ing);
+                            x.setUnitPrice(BigDecimal.ZERO);
+                            x.setTotalPrice(BigDecimal.ZERO);
+                            x.setQuantity(BigDecimal.ZERO);
+                            return x;
+                        }
+                );
+
+                bi.setQuantity(bi.getQuantity().add(BigDecimal.valueOf(totalBaseQty)));
+            }
+        }
+
+        for (BudgetIngredient bi : merged.values()) {
+            Ingredient ing = bi.getIngredient();
+            String unit = ing.getUnitMeasure().getCode();
+            double volume = ing.getVolume().doubleValue();
+
+            double totalBase = bi.getQuantity().doubleValue();
+            double volumeBase = convertToBase(volume, unit);
+
+            int unitsNeeded = (int) Math.ceil(totalBase / volumeBase);
+            bi.setUnits(unitsNeeded);
+
+            if (unit.equalsIgnoreCase("L") || unit.equalsIgnoreCase("KG")) {
+                bi.setQuantity(BigDecimal.valueOf(totalBase / 1000.0));
+            }
+
+            if (bi.getUnitPrice() != null) {
+                bi.setTotalPrice(BigDecimal.valueOf(unitsNeeded).multiply(bi.getUnitPrice()));
+            }
+        }
+
+        return merged.values().stream().toList();
+    }
+
+    private double convertToBase(double qty, String unit) {
+        unit = unit.toLowerCase();
+        return switch (unit) {
+            case "l", "kg" -> qty * 1000;
+            case "ml", "g" -> qty;
+            default -> qty;
+        };
     }
 }

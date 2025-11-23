@@ -1,13 +1,8 @@
 package com.example.beverage_budget.controller;
 
-import com.example.beverage_budget.model.Drink;
-import com.example.beverage_budget.model.DrinkIngredient;
-import com.example.beverage_budget.model.Ingredient;
-import com.example.beverage_budget.model.UnitOfMeasure;
-import com.example.beverage_budget.service.DrinkService;
-import com.example.beverage_budget.service.IngredientService;
-import com.example.beverage_budget.service.UnitConversionService;
-import com.example.beverage_budget.service.UnitOfMeasureService;
+import com.example.beverage_budget.dto.DrinkDto;
+import com.example.beverage_budget.model.*;
+import com.example.beverage_budget.service.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -37,6 +32,9 @@ public class DrinkController {
 
     @Autowired
     private UnitConversionService conversionService;
+
+    @Autowired
+    private BudgetService budgetService;
 
     @GetMapping({"", "/"})
     public String list(@RequestParam(required = false) String search, Model model) {
@@ -219,25 +217,23 @@ public class DrinkController {
         return list;
     }
 
-    @GetMapping("/{id}/budget-ingredients")
+    @PostMapping("/calculate-ingredients")
     @ResponseBody
-    public List<Map<String, Object>> getBudgetIngredients(@PathVariable Long id) {
+    public List<Map<String, Object>> calculateIngredients(@RequestBody List<DrinkDto> drinks) {
+        List<BudgetIngredient> list = budgetService.calculateIngredientsFromDrinks(drinks);
 
-        Drink drink = drinkService.getByIdWithIngredients(id);
-
-        return drink.getIngredients().stream().map(di -> {
-
-            Ingredient ing = di.getIngredient();
-
+        return list.stream().map(bi -> {
+            Ingredient ing = bi.getIngredient();
             Map<String, Object> m = new HashMap<>();
             m.put("ingredientId", ing.getId());
             m.put("ingredientName", ing.getName());
             m.put("unitMeasure", ing.getUnitMeasure().getCode());
-            m.put("quantity", di.getQuantity());
             m.put("ingredientVolume", ing.getVolume());
-
+            m.put("quantity", bi.getQuantity());
+            m.put("unitsNeeded", bi.getUnits());
+            m.put("unitPrice", bi.getUnitPrice());
+            m.put("totalPrice", bi.getTotalPrice());
             return m;
-
         }).collect(Collectors.toList());
     }
 }

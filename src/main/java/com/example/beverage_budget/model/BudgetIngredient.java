@@ -30,4 +30,7 @@ public class BudgetIngredient {
 
     @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
+
+    @Column(name = "units_needed", nullable = false)
+    private Integer units;
 }
