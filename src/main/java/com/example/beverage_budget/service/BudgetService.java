@@ -16,4 +16,8 @@ public interface BudgetService {
     void calculateTotals(Budget budget);
     void applyDrinkProportion(Budget budget, int targetServings);
     List<BudgetIngredient> calculateIngredientsFromDrinks(List<DrinkDto> drinks);
+    BudgetIngredient getIngredientById(Long ingredientId, List<DrinkDto> drinks);
+    double convertToBase(double qty, String unit);
+    int calculateUnitsFromQuantity(double quantity, double volumePerUnit);
+    double calculateQuantityFromUnits(int units, double volumePerUnit);
 }

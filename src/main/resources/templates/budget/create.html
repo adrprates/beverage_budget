@@ -64,18 +64,6 @@
 
             <h5 class="card-title mb-3">Ingredientes</h5>
 
-            <div class="d-flex align-items-center mb-3">
-                <div class="form-check me-3">
-                    <input class="form-check-input" type="checkbox" id="autoProportion" name="autoProportion">
-                    <label class="form-check-label" for="autoProportion">
-                        Aplicar proporção automática
-                    </label>
-                </div>
-                <button type="button" id="calcProportionBtn" class="btn btn-outline-light btn-sm">
-                    Calcular proporcionalidade
-                </button>
-            </div>
-
             <div id="autoIngredientsSection" class="mb-4">
                 <h6 class="mb-3">Ingredientes dos Drinks Selecionados</h6>
                 <table class="table table-sm table-dark align-middle text-center">
@@ -176,22 +164,17 @@ function formatCurrency(value) {
 
 function updateTotals() {
     let ingredientTotal = 0;
-
     document.querySelectorAll('#autoIngredientsTable .total')
         .forEach(i => ingredientTotal += parseFloat(i.value || 0));
-
-    document.getElementById('autoIngredientsSubtotal').innerText =
-        formatCurrency(ingredientTotal);
+    document.getElementById('autoIngredientsSubtotal').innerText = formatCurrency(ingredientTotal);
 }
 
 function updateRowTotal(row) {
     const units = parseFloat(row.querySelector('.units').value || 0);
     const price = parseFloat(row.querySelector('.unit-price').value || 0);
     const total = units * price;
-
     row.querySelector('.total').value = total;
     row.querySelector('.total-display').innerText = formatCurrency(total);
-
     updateTotals();
 }
 
@@ -200,7 +183,6 @@ document.getElementById('addDrinkBtn').addEventListener('click', async () => {
     const id = select.value;
     const name = select.selectedOptions[0]?.text;
     const qty = parseFloat(document.getElementById('drinkQuantity').value);
-
     if (!id || !qty) return;
 
     const div = document.createElement('div');
@@ -211,7 +193,6 @@ document.getElementById('addDrinkBtn').addEventListener('click', async () => {
         <input type="hidden" name="drinkIds" value="${id}">
         <input type="hidden" name="drinkQuantities" value="${qty}">
     `;
-
     document.getElementById('addedDrinks').appendChild(div);
 
     div.querySelector('.btn-remove').addEventListener('click', () => {
@@ -228,14 +209,9 @@ document.getElementById('addDrinkBtn').addEventListener('click', async () => {
 async function refreshAutoIngredients() {
     const ids = [...document.getElementsByName('drinkIds')].map(i => i.value);
     const qtys = [...document.getElementsByName('drinkQuantities')].map(i => parseFloat(i.value));
-
     const tbody = document.getElementById('autoIngredientsTable');
     tbody.innerHTML = '';
-
-    if (ids.length === 0) {
-        updateTotals();
-        return;
-    }
+    if (ids.length === 0) { updateTotals(); return; }
 
     const drinksPayload = ids.map((id, idx) => ({ drinkId: id, quantity: qtys[idx] }));
 
@@ -245,31 +221,26 @@ async function refreshAutoIngredients() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(drinksPayload)
         });
-
         if (!res.ok) throw new Error('Erro ao calcular ingredientes');
 
         const list = await res.json();
-
-        if (!list || list.length === 0) {
-            updateTotals();
-            return;
-        }
+        if (!list || list.length === 0) { updateTotals(); return; }
 
         list.forEach(i => {
-            const unitsNeeded = i.unitsNeeded || 0;
+            let unitsNeeded = i.unitsNeeded || 0;
             let finalQuantity = parseFloat(i.quantity || 0);
-
-            const unit = i.unitMeasure.toLowerCase();
-            if (unit === 'l' || unit === 'kg') {
-                finalQuantity = finalQuantity;
-            }
-
-            finalQuantity = finalQuantity.toFixed(2);
 
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${i.ingredientName}</td>
-                <td>${finalQuantity} ${i.unitMeasure}</td>
+                <td>
+                    <div style="display: flex; align-items: center;">
+                        <input class="form-control form-control-sm final-quantity"
+                               type="number" min="0" step="0.01"
+                               value="${finalQuantity}" style="flex: 1;">
+                        <span style="margin-left: 4px;">${i.unitMeasure}</span>
+                    </div>
+                </td>
                 <td>
                     <input class="form-control form-control-sm units"
                            type="number" min="0" step="1"
@@ -286,7 +257,39 @@ async function refreshAutoIngredients() {
             `;
             tbody.appendChild(row);
 
-            row.querySelector('.units').addEventListener('input', () => updateRowTotal(row));
+            const qtyInput = row.querySelector('.final-quantity');
+            const unitsInput = row.querySelector('.units');
+
+            qtyInput.addEventListener('blur', async () => {
+                const qty = parseFloat(qtyInput.value || 0);
+                const payload = { ingredientId: i.ingredientId, quantity: qty, drinks: drinksPayload };
+                const res = await fetch('/drink/update-quantity', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!data.error) {
+                    unitsInput.value = data.units;
+                    qtyInput.value = parseFloat(data.quantity).toFixed(2);
+                    updateRowTotal(row);
+                }
+            });
+
+            unitsInput.addEventListener('blur', async () => {
+                const units = parseInt(unitsInput.value || 0);
+                const payload = { ingredientId: i.ingredientId, units, drinks: drinksPayload };
+                const res = await fetch('/drink/update-units', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!data.error) {
+                    unitsInput.value = data.units;
+                    qtyInput.value = parseFloat(data.quantity).toFixed(2);
+                    updateRowTotal(row);
+                }
+            });
+
             row.querySelector('.unit-price').addEventListener('input', () => updateRowTotal(row));
         });
 

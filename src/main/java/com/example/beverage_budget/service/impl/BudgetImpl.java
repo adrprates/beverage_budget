@@ -187,12 +187,11 @@ public class BudgetImpl implements BudgetService {
 
             for (DrinkIngredient di : drink.getIngredients()) {
                 Ingredient ing = di.getIngredient();
-                String unit = ing.getUnitMeasure().getCode();
                 double qtyPerDrink = di.getQuantity().doubleValue();
+                String unit = ing.getUnitMeasure().getCode();
                 double volume = ing.getVolume().doubleValue();
 
                 double totalBaseQty = convertToBase(qtyPerDrink, unit) * drinkQty;
-                double volumeBase = convertToBase(volume, unit);
 
                 BudgetIngredient bi = merged.computeIfAbsent(
                         ing.getId(),
@@ -210,35 +209,50 @@ public class BudgetImpl implements BudgetService {
             }
         }
 
-        for (BudgetIngredient bi : merged.values()) {
+        merged.values().forEach(bi -> {
             Ingredient ing = bi.getIngredient();
             String unit = ing.getUnitMeasure().getCode();
             double volume = ing.getVolume().doubleValue();
-
             double totalBase = bi.getQuantity().doubleValue();
-            double volumeBase = convertToBase(volume, unit);
 
+            double volumeBase = convertToBase(volume, unit);
             int unitsNeeded = (int) Math.ceil(totalBase / volumeBase);
+
             bi.setUnits(unitsNeeded);
 
-            if (unit.equalsIgnoreCase("L") || unit.equalsIgnoreCase("KG")) {
+            if ("L".equalsIgnoreCase(unit) || "KG".equalsIgnoreCase(unit)) {
                 bi.setQuantity(BigDecimal.valueOf(totalBase / 1000.0));
             }
 
             if (bi.getUnitPrice() != null) {
                 bi.setTotalPrice(BigDecimal.valueOf(unitsNeeded).multiply(bi.getUnitPrice()));
             }
-        }
+        });
 
         return merged.values().stream().toList();
     }
 
-    private double convertToBase(double qty, String unit) {
+    public double convertToBase(double qty, String unit) {
         unit = unit.toLowerCase();
         return switch (unit) {
             case "l", "kg" -> qty * 1000;
             case "ml", "g" -> qty;
             default -> qty;
         };
+    }
+
+    public int calculateUnitsFromQuantity(double quantity, double volumePerUnit) {
+        return (int) Math.ceil(quantity / volumePerUnit);
+    }
+
+    public double calculateQuantityFromUnits(int units, double volumePerUnit) {
+        return units * volumePerUnit;
+    }
+
+    @Override
+    public BudgetIngredient getIngredientById(Long ingredientId, List<DrinkDto> drinks) {
+        List<BudgetIngredient> list = calculateIngredientsFromDrinks(drinks);
+        return list.stream().filter(bi -> bi.getIngredient().getId().equals(ingredientId))
+                .findFirst().orElse(null);
     }
 }

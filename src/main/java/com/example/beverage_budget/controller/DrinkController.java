@@ -1,6 +1,7 @@
 package com.example.beverage_budget.controller;
 
 import com.example.beverage_budget.dto.DrinkDto;
+import com.example.beverage_budget.dto.UpdateIngredientRequest;
 import com.example.beverage_budget.model.*;
 import com.example.beverage_budget.service.*;
 import jakarta.validation.Valid;
@@ -11,6 +12,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -235,5 +237,66 @@ public class DrinkController {
             m.put("totalPrice", bi.getTotalPrice());
             return m;
         }).collect(Collectors.toList());
+    }
+
+    @PostMapping("/update-units")
+    @ResponseBody
+    public Map<String, Object> updateQuantityFromUnits(@RequestBody UpdateIngredientRequest request) {
+        Long ingredientId = request.getIngredientId();
+        int units = request.getUnits();
+        List<DrinkDto> drinks = request.getDrinks();
+
+        BudgetIngredient bi = budgetService.getIngredientById(ingredientId, drinks);
+        if (bi == null) return Map.of("error", "Ingrediente não encontrado");
+
+        double volumeBase = budgetService.convertToBase(
+                bi.getIngredient().getVolume().doubleValue(),
+                bi.getIngredient().getUnitMeasure().getCode()
+        );
+
+        double newQuantityBase = budgetService.calculateQuantityFromUnits(units, volumeBase);
+        bi.setQuantity(BigDecimal.valueOf(newQuantityBase));
+        bi.setUnits(units);
+
+        double displayQuantity = newQuantityBase;
+        String unit = bi.getIngredient().getUnitMeasure().getCode();
+        if ("L".equalsIgnoreCase(unit) || "KG".equalsIgnoreCase(unit)) displayQuantity /= 1000.0;
+
+        return Map.of(
+                "quantity", displayQuantity,
+                "units", bi.getUnits()
+        );
+    }
+
+    @PostMapping("/update-quantity")
+    @ResponseBody
+    public Map<String, Object> updateUnitsFromQuantity(@RequestBody UpdateIngredientRequest request) {
+        Long ingredientId = request.getIngredientId();
+        double quantity = request.getQuantity();
+        List<DrinkDto> drinks = request.getDrinks();
+
+        BudgetIngredient bi = budgetService.getIngredientById(ingredientId, drinks);
+        if (bi == null) return Map.of("error", "Ingrediente não encontrado");
+
+        double volumeBase = budgetService.convertToBase(
+                bi.getIngredient().getVolume().doubleValue(),
+                bi.getIngredient().getUnitMeasure().getCode()
+        );
+
+        String unit = bi.getIngredient().getUnitMeasure().getCode();
+        double quantityBase = quantity;
+        if ("L".equalsIgnoreCase(unit) || "KG".equalsIgnoreCase(unit)) quantityBase *= 1000;
+
+        int newUnits = budgetService.calculateUnitsFromQuantity(quantityBase, volumeBase);
+        bi.setQuantity(BigDecimal.valueOf(quantityBase));
+        bi.setUnits(newUnits);
+
+        double displayQuantity = quantityBase;
+        if ("L".equalsIgnoreCase(unit) || "KG".equalsIgnoreCase(unit)) displayQuantity /= 1000.0;
+
+        return Map.of(
+                "quantity", displayQuantity,
+                "units", bi.getUnits()
+        );
     }
 }
