@@ -83,6 +83,7 @@
                     <tr>
                         <th>Ingrediente</th>
                         <th>Quantidade</th>
+                        <th>Unidade(s)</th>
                         <th>Valor Unit.</th>
                         <th>Total</th>
                     </tr>
@@ -173,171 +174,173 @@ function formatCurrency(value) {
     return `R$ ${parseFloat(value || 0).toFixed(2).replace('.', ',')}`;
 }
 
+function convertToBaseUnit(quantity, unit) {
+    unit = unit.toLowerCase();
+    switch (unit) {
+        case 'l': return quantity * 1000;
+        case 'ml': return quantity;
+        case 'kg': return quantity * 1000;
+        case 'g': return quantity;
+        default: return quantity;
+    }
+}
+
+function convertVolumeToBase(volume, unit) {
+    unit = unit.toLowerCase();
+    switch (unit) {
+        case 'l': return volume * 1000;
+        case 'ml': return volume;
+        case 'kg': return volume * 1000;
+        case 'g': return volume;
+        default: return volume;
+    }
+}
+
 function updateTotals() {
     let ingredientTotal = 0;
-    document.querySelectorAll('#autoIngredientsTable .total').forEach(i => ingredientTotal += parseFloat(i.value || 0));
-    document.querySelectorAll('#addedIngredients input[name="ingredientUnitPrices"]').forEach((price, idx) => {
-        const qty = document.querySelectorAll('#addedIngredients input[name="ingredientQuantities"]')[idx];
-        ingredientTotal += parseFloat(price.value || 0) * parseFloat(qty.value || 0);
-    });
 
-    let resourceTotal = 0;
-    document.querySelectorAll('#addedResources input[name="resourceUnitPrices"]').forEach((price, idx) => {
-        const qty = document.querySelectorAll('#addedResources input[name="resourceQuantities"]')[idx];
-        resourceTotal += parseFloat(price.value || 0) * parseFloat(qty.value || 0);
-    });
+    document.querySelectorAll('#autoIngredientsTable .total')
+        .forEach(i => ingredientTotal += parseFloat(i.value || 0));
 
-    const totalCost = ingredientTotal + resourceTotal;
-    const markupPerc = parseFloat(document.getElementById('markupPercentage').value || 0);
-    const markupValue = totalCost * (markupPerc / 100);
-    const finalPrice = parseFloat(document.getElementById('customFinalValue').value || (totalCost + markupValue));
+    document.getElementById('autoIngredientsSubtotal').innerText =
+        formatCurrency(ingredientTotal);
+}
 
-    document.getElementById('ingredientTotalDisplay').innerText = formatCurrency(ingredientTotal);
-    document.getElementById('resourceTotalDisplay').innerText = formatCurrency(resourceTotal);
-    document.getElementById('totalCostDisplay').innerText = formatCurrency(totalCost);
-    document.getElementById('markupValueDisplay').innerText = formatCurrency(markupValue);
-    document.getElementById('finalPriceDisplay').innerText = formatCurrency(finalPrice);
+function updateRowTotal(row) {
+    const units = parseFloat(row.querySelector('.units').value || 0);
+    const price = parseFloat(row.querySelector('.unit-price').value || 0);
+    const total = units * price;
+
+    row.querySelector('.total').value = total;
+    row.querySelector('.total-display').innerText = formatCurrency(total);
+
+    updateTotals();
 }
 
 document.getElementById('addDrinkBtn').addEventListener('click', async () => {
-    const drinkSelect = document.getElementById('drinkSelect');
-    const id = drinkSelect.value;
-    const name = drinkSelect.selectedOptions[0]?.text;
-    const qty = document.getElementById('drinkQuantity').value;
+    const select = document.getElementById('drinkSelect');
+    const id = select.value;
+    const name = select.selectedOptions[0]?.text;
+    const qty = parseFloat(document.getElementById('drinkQuantity').value);
+
     if (!id || !qty) return;
 
     const div = document.createElement('div');
-    div.className = 'added-item';
+    div.className = "added-item";
     div.innerHTML = `
-        ${name} - ${qty} un 
-        <button type="button" class="btn-remove">Remover</button>
+        ${name} - ${qty} un
+        <button class="btn-remove" type="button">Remover</button>
         <input type="hidden" name="drinkIds" value="${id}">
         <input type="hidden" name="drinkQuantities" value="${qty}">
     `;
-    document.getElementById('addedDrinks').appendChild(div);
-    div.querySelector('.btn-remove').addEventListener('click', () => { div.remove(); refreshAutoIngredients(); });
 
-    drinkSelect.value = '';
-    document.getElementById('drinkQuantity').value = '';
+    document.getElementById('addedDrinks').appendChild(div);
+
+    div.querySelector('.btn-remove').addEventListener('click', () => {
+        div.remove();
+        refreshAutoIngredients();
+    });
+
+    select.value = "";
+    document.getElementById('drinkQuantity').value = "";
+
     await refreshAutoIngredients();
 });
 
 async function refreshAutoIngredients() {
-    const drinkIds = Array.from(document.getElementsByName('drinkIds')).map(i => i.value);
-    const tableBody = document.getElementById('autoIngredientsTable');
-    tableBody.innerHTML = '';
+    const ids = [...document.getElementsByName('drinkIds')].map(i => i.value);
+    const qtys = [...document.getElementsByName('drinkQuantities')].map(i => parseFloat(i.value));
+
+    const tbody = document.getElementById('autoIngredientsTable');
+    tbody.innerHTML = '';
+
     const merged = {};
 
-    for (const id of drinkIds) {
+    for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
+        const drinkQty = qtys[i];
+
         try {
-            const res = await fetch(`/drink/${id}/ingredients`);
+            const res = await fetch(`/drink/${id}/budget-ingredients`);
             if (!res.ok) continue;
+
             const list = await res.json();
-            console.log(`Ingredientes recebidos do drink ${id}:`, list);
 
             list.forEach(ing => {
                 const ingId = ing.ingredientId;
-                const name = ing.ingredientName ?? 'Sem nome';
-                const qty = parseFloat(ing.quantity ?? 0);
-                const unit = ing.unitMeasure ?? '';
+                const name = ing.ingredientName;
+                const unit = ing.unitMeasure;
+                const qtyPerDrink = parseFloat(ing.quantity);
+                const volume = parseFloat(ing.ingredientVolume);
+
+                const totalBaseQty = convertToBaseUnit(qtyPerDrink, unit) * drinkQty;
+                const volumeBase = convertVolumeToBase(volume, unit);
 
                 if (!merged[ingId]) {
-                    merged[ingId] = { id: ingId, name, quantity: qty, unit };
+                    merged[ingId] = {
+                        id: ingId,
+                        name,
+                        unit,
+                        totalBaseQty,
+                        volumeBase
+                    };
                 } else {
-                    merged[ingId].quantity += qty;
+                    merged[ingId].totalBaseQty += totalBaseQty;
                 }
             });
-        } catch (err) {
-            console.error(`Erro ao carregar ingredientes do drink ${id}:`, err);
+
+        } catch (error) {
+            console.error("Erro:", error);
         }
     }
 
     Object.values(merged).forEach(i => {
-        const qty = parseFloat(i.quantity ?? 0);
+
+        const unitsNeeded = Math.ceil(i.totalBaseQty / i.volumeBase);
+
+        let finalQuantity = i.totalBaseQty;
+
+        if (i.unit.toLowerCase() === "l") finalQuantity = i.totalBaseQty / 1000;
+        if (i.unit.toLowerCase() === "kg") finalQuantity = i.totalBaseQty / 1000;
+
+        finalQuantity = finalQuantity.toFixed(2);
+
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${i.name} (${i.unit})<input type="hidden" name="ingredientIds" value="${i.id}"></td>
-          <td><input type="number" name="ingredientQuantities" value="${qty}" min="0" step="0.01" class="form-control form-control-sm qty"></td>
-          <td><input type="number" name="ingredientUnitPrices" value="0" min="0" step="0.01" class="form-control form-control-sm unit-price"></td>
-          <td><span class="total-display">R$ 0,00</span><input type="hidden" class="total" value="0"></td>
+
+            <td>${i.name}</td>
+
+            <!-- QUANTIDADE FINAL -->
+            <td>${finalQuantity} ${i.unit}</td>
+
+            <!-- UNIDADES (embalagens) -->
+            <td>
+                <input class="form-control form-control-sm units"
+                       type="number" min="0" step="1"
+                       value="${unitsNeeded}">
+            </td>
+
+            <!-- VALOR UNITÁRIO (sem "un") -->
+            <td>
+                <input class="form-control form-control-sm unit-price"
+                       type="number" value="0.00" min="0" step="0.01">
+            </td>
+
+            <!-- TOTAL POR INGREDIENTE -->
+            <td>
+                <span class="total-display">R$ 0,00</span>
+                <input class="total" type="hidden" value="0">
+            </td>
         `;
-        tableBody.appendChild(row);
-        row.querySelectorAll('.qty, .unit-price').forEach(inp =>
-            inp.addEventListener('input', () => updateRowTotal(row))
-        );
+
+        tbody.appendChild(row);
+
+        row.querySelector('.units').addEventListener('input', () => updateRowTotal(row));
+        row.querySelector('.unit-price').addEventListener('input', () => updateRowTotal(row));
     });
 
     updateTotals();
 }
-
-function updateRowTotal(row) {
-    const qty = parseFloat(row.querySelector('.qty').value || 0);
-    const unit = parseFloat(row.querySelector('.unit-price').value || 0);
-    const total = qty * unit;
-    row.querySelector('.total').value = total;
-    row.querySelector('.total-display').innerText = formatCurrency(total);
-    updateTotals();
-}
-
-document.getElementById('calcProportionBtn').addEventListener('click', () => {
-    const peopleCount = parseFloat(document.getElementById('peopleCount').value || 0);
-    if (!peopleCount) return alert("Informe a quantidade de pessoas para calcular a proporcionalidade.");
-
-    document.querySelectorAll('#autoIngredientsTable tr').forEach(row => {
-        const qtyInput = row.querySelector('.qty');
-        const baseQty = parseFloat(qtyInput.dataset.baseQty || qtyInput.value || 0);
-        if (!qtyInput.dataset.baseQty) qtyInput.dataset.baseQty = baseQty;
-
-        const proportionalQty = baseQty * (peopleCount / 10);
-        qtyInput.value = proportionalQty.toFixed(2);
-        updateRowTotal(row);
-    });
-});
-
-document.getElementById('addIngredientBtn').addEventListener('click', () => {
-    const id = document.getElementById('ingredientSelect').value;
-    const name = document.getElementById('ingredientSelect').selectedOptions[0]?.text;
-    const qty = document.getElementById('ingredientQuantity').value;
-    const price = document.getElementById('ingredientUnitPrice').value;
-    if (!id || !qty) return;
-
-    const div = document.createElement('div');
-    div.className = 'added-item';
-    div.innerHTML = `
-        ${name} - ${qty} un - R$${parseFloat(price || 0).toFixed(2)}
-        <button type="button" class="btn-remove">Remover</button>
-        <input type="hidden" name="ingredientIds" value="${id}">
-        <input type="hidden" name="ingredientQuantities" value="${qty}">
-        <input type="hidden" name="ingredientUnitPrices" value="${price}">
-    `;
-    document.getElementById('addedIngredients').appendChild(div);
-    div.querySelector('.btn-remove').addEventListener('click', () => { div.remove(); updateTotals(); });
-    updateTotals();
-});
-
-document.getElementById('addResourceBtn').addEventListener('click', () => {
-    const id = document.getElementById('resourceSelect').value;
-    const name = document.getElementById('resourceSelect').selectedOptions[0]?.text;
-    const qty = document.getElementById('resourceQuantity').value;
-    const price = document.getElementById('resourceUnitPrice').value;
-    if (!id || !qty) return;
-
-    const div = document.createElement('div');
-    div.className = 'added-item';
-    div.innerHTML = `
-        ${name} - ${qty} un - R$${price}
-        <button type="button" class="btn-remove">Remover</button>
-        <input type="hidden" name="resourceIds" value="${id}">
-        <input type="hidden" name="resourceQuantities" value="${qty}">
-        <input type="hidden" name="resourceUnitPrices" value="${price}">
-    `;
-    document.getElementById('addedResources').appendChild(div);
-    div.querySelector('.btn-remove').addEventListener('click', () => { div.remove(); updateTotals(); });
-    updateTotals();
-});
-
-document.getElementById('markupPercentage').addEventListener('input', updateTotals);
-document.getElementById('customFinalValue').addEventListener('input', updateTotals);
 </script>
 
 </body>

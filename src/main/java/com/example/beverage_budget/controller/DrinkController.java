@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/drink")
@@ -216,5 +217,27 @@ public class DrinkController {
             }
         }
         return list;
+    }
+
+    @GetMapping("/{id}/budget-ingredients")
+    @ResponseBody
+    public List<Map<String, Object>> getBudgetIngredients(@PathVariable Long id) {
+
+        Drink drink = drinkService.getByIdWithIngredients(id);
+
+        return drink.getIngredients().stream().map(di -> {
+
+            Ingredient ing = di.getIngredient();
+
+            Map<String, Object> m = new HashMap<>();
+            m.put("ingredientId", ing.getId());
+            m.put("ingredientName", ing.getName());
+            m.put("unitMeasure", ing.getUnitMeasure().getCode());
+            m.put("quantity", di.getQuantity());
+            m.put("ingredientVolume", ing.getVolume());
+
+            return m;
+
+        }).collect(Collectors.toList());
     }
 }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -140,23 +141,28 @@ public class BudgetImpl implements BudgetService {
             if (drink == null || drink.getServings() == null || drink.getServings() == 0)
                 continue;
 
-            BigDecimal factor = BigDecimal.valueOf((double) targetServings / drink.getServings());
-            bd.setQuantity(bd.getQuantity().multiply(factor));
+            BigDecimal factor = BigDecimal.valueOf(targetServings)
+                    .divide(BigDecimal.valueOf(drink.getServings()), 6, RoundingMode.HALF_UP);
+
+            bd.setQuantity(BigDecimal.valueOf(targetServings));
         }
 
         if (budget.getIngredients() != null) {
-            BigDecimal proportionFactor = BigDecimal.valueOf((double) targetServings / budget.getPeopleCount());
             for (BudgetIngredient bi : budget.getIngredients()) {
                 if (bi.getQuantity() != null) {
-                    bi.setQuantity(bi.getQuantity().multiply(proportionFactor));
+                    BigDecimal factor = BigDecimal.valueOf(targetServings);
+                    BigDecimal newQuantity = bi.getQuantity().multiply(factor);
+                    bi.setQuantity(newQuantity);
+
                     if (bi.getUnitPrice() != null) {
-                        bi.setTotalPrice(bi.getQuantity().multiply(bi.getUnitPrice()));
+                        bi.setTotalPrice(newQuantity.multiply(bi.getUnitPrice()));
                     }
                 }
             }
         }
 
         calculateTotals(budget);
+
         budgetRepository.save(budget);
     }
 }
