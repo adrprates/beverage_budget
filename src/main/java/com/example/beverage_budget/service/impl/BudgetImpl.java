@@ -1,10 +1,9 @@
 package com.example.beverage_budget.service.impl;
 
 import com.example.beverage_budget.dto.DrinkDto;
-import com.example.beverage_budget.enums.BudgetStatus;
 import com.example.beverage_budget.model.*;
 import com.example.beverage_budget.repository.BudgetDrinkRepository;
-import com.example.beverage_budget.repository.BudgetIngredientRepository;
+import com.example.beverage_budget.repository.BudgetAutoIngredientRepository;
 import com.example.beverage_budget.repository.BudgetRepository;
 import com.example.beverage_budget.repository.BudgetResourceRepository;
 import com.example.beverage_budget.service.BudgetService;
@@ -28,7 +27,7 @@ public class BudgetImpl implements BudgetService {
 
     private final BudgetRepository budgetRepository;
     private final BudgetDrinkRepository budgetDrinkRepository;
-    private final BudgetIngredientRepository budgetIngredientRepository;
+    private final BudgetAutoIngredientRepository budgetAutoIngredientRepository;
     private final BudgetResourceRepository budgetResourceRepository;
 
     @Autowired
@@ -63,9 +62,15 @@ public class BudgetImpl implements BudgetService {
             }
         }
 
-        if (budget.getIngredients() != null) {
-            for (BudgetIngredient bi : budget.getIngredients()) {
-                bi.setBudget(budget);
+        if (budget.getAutoIngredients() != null) {
+            for (BudgetAutoIngredient ba : budget.getAutoIngredients()) {
+                ba.setBudget(budget);
+            }
+        }
+
+        if (budget.getManualIngredients() != null) {
+            for (BudgetManualIngredient bm : budget.getManualIngredients()) {
+                bm.setBudget(budget);
             }
         }
 
@@ -83,10 +88,18 @@ public class BudgetImpl implements BudgetService {
         BigDecimal totalIngredients = BigDecimal.ZERO;
         BigDecimal totalResources = BigDecimal.ZERO;
 
-        if (budget.getIngredients() != null) {
-            totalIngredients = budget.getIngredients().stream()
-                    .map(BudgetIngredient::getTotalPrice)
+        if (budget.getAutoIngredients() != null) {
+            totalIngredients = budget.getAutoIngredients().stream()
+                    .map(BudgetAutoIngredient::getTotalPrice)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+
+        if (budget.getManualIngredients() != null) {
+            totalIngredients = totalIngredients.add(
+                    budget.getManualIngredients().stream()
+                            .map(BudgetManualIngredient::getTotalPrice)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            );
         }
 
         if (budget.getResources() != null) {
@@ -113,6 +126,7 @@ public class BudgetImpl implements BudgetService {
         budgetRepository.save(budget);
     }
 
+
     @Override
     public void applyDrinkProportion(Budget budget, int targetServings) {
         if (budget == null || budget.getDrinks() == null) return;
@@ -128,8 +142,8 @@ public class BudgetImpl implements BudgetService {
             bd.setQuantity(BigDecimal.valueOf(targetServings));
         }
 
-        if (budget.getIngredients() != null) {
-            for (BudgetIngredient bi : budget.getIngredients()) {
+        if (budget.getAutoIngredients() != null) {
+            for (BudgetAutoIngredient bi : budget.getAutoIngredients()) {
                 if (bi.getQuantity() != null) {
                     BigDecimal factor = BigDecimal.valueOf(targetServings);
                     BigDecimal newQuantity = bi.getQuantity().multiply(factor);
@@ -148,10 +162,10 @@ public class BudgetImpl implements BudgetService {
     }
 
     @Override
-    public List<BudgetIngredient> calculateIngredientsFromDrinks(List<DrinkDto> drinks) {
+    public List<BudgetAutoIngredient> calculateIngredientsFromDrinks(List<DrinkDto> drinks) {
         if (drinks == null || drinks.isEmpty()) return Collections.emptyList();
 
-        Map<Long, BudgetIngredient> merged = new HashMap<>();
+        Map<Long, BudgetAutoIngredient> merged = new HashMap<>();
 
         for (DrinkDto dto : drinks) {
             Drink drink = drinkService.getByIdWithIngredients(dto.getDrinkId());
@@ -165,10 +179,10 @@ public class BudgetImpl implements BudgetService {
 
                 double totalBaseQty = convertToBase(qtyPerDrink, unit) * drinkQty;
 
-                BudgetIngredient bi = merged.computeIfAbsent(
+                BudgetAutoIngredient bi = merged.computeIfAbsent(
                         ing.getId(),
                         id -> {
-                            BudgetIngredient x = new BudgetIngredient();
+                            BudgetAutoIngredient x = new BudgetAutoIngredient();
                             x.setIngredient(ing);
                             x.setUnitPrice(BigDecimal.ZERO);
                             x.setTotalPrice(BigDecimal.ZERO);
@@ -221,12 +235,35 @@ public class BudgetImpl implements BudgetService {
     }
 
     @Override
-    public BudgetIngredient getIngredientById(Long ingredientId, List<DrinkDto> drinks) {
-        List<BudgetIngredient> list = calculateIngredientsFromDrinks(drinks);
+    public BudgetAutoIngredient getIngredientById(Long ingredientId, List<DrinkDto> drinks) {
+        List<BudgetAutoIngredient> list = calculateIngredientsFromDrinks(drinks);
         return list.stream().filter(bi -> bi.getIngredient().getId().equals(ingredientId))
                 .findFirst().orElse(null);
     }
 
+    @Override
+    public void applyManualIngredientProportion(Budget budget) {
+        if (budget == null || budget.getManualIngredients() == null) return;
 
+        for (BudgetManualIngredient mi : budget.getManualIngredients()) {
+            Ingredient ing = mi.getIngredient();
+            if (ing == null || ing.getVolume() == null || ing.getVolume().doubleValue() == 0) continue;
+
+            BigDecimal totalQuantity = mi.getQuantity();
+
+            int unitsNeeded = calculateUnitsFromQuantity(totalQuantity.doubleValue(), ing.getVolume().doubleValue());
+            mi.setUnitsNeeded(unitsNeeded);
+
+            BigDecimal adjustedQuantity = BigDecimal.valueOf(calculateQuantityFromUnits(unitsNeeded, ing.getVolume().doubleValue()));
+            mi.setQuantity(adjustedQuantity);
+
+            if (mi.getUnitPrice() != null) {
+                mi.setTotalPrice(mi.getUnitPrice().multiply(BigDecimal.valueOf(unitsNeeded)));
+            }
+        }
+
+        calculateTotals(budget);
+        budgetRepository.save(budget);
+    }
 
 }

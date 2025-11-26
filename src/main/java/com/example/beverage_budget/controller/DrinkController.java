@@ -222,7 +222,7 @@ public class DrinkController {
     @PostMapping("/calculate-ingredients")
     @ResponseBody
     public List<Map<String, Object>> calculateIngredients(@RequestBody List<DrinkDto> drinks) {
-        List<BudgetIngredient> list = budgetService.calculateIngredientsFromDrinks(drinks);
+        List<BudgetAutoIngredient> list = budgetService.calculateIngredientsFromDrinks(drinks);
 
         return list.stream().map(bi -> {
             Ingredient ing = bi.getIngredient();
@@ -246,7 +246,7 @@ public class DrinkController {
         int units = request.getUnits();
         List<DrinkDto> drinks = request.getDrinks();
 
-        BudgetIngredient bi = budgetService.getIngredientById(ingredientId, drinks);
+        BudgetAutoIngredient bi = budgetService.getIngredientById(ingredientId, drinks);
         if (bi == null) return Map.of("error", "Ingrediente não encontrado");
 
         double volumeBase = budgetService.convertToBase(
@@ -275,7 +275,7 @@ public class DrinkController {
         double quantity = request.getQuantity();
         List<DrinkDto> drinks = request.getDrinks();
 
-        BudgetIngredient bi = budgetService.getIngredientById(ingredientId, drinks);
+        BudgetAutoIngredient bi = budgetService.getIngredientById(ingredientId, drinks);
         if (bi == null) return Map.of("error", "Ingrediente não encontrado");
 
         double volumeBase = budgetService.convertToBase(

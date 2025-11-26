@@ -57,31 +57,29 @@
                     <button type="button" id="addDrinkBtn" class="btn btn-outline-light w-100">Adicionar</button>
                 </div>
             </div>
-
             <div id="addedDrinks" class="mb-4"></div>
 
             <hr>
 
             <h5 class="card-title mb-3">Ingredientes</h5>
-
             <div id="autoIngredientsSection" class="mb-4">
                 <h6 class="mb-3">Ingredientes dos Drinks Selecionados</h6>
                 <table class="table table-sm table-dark align-middle text-center">
                     <thead>
-                    <tr>
-                        <th>Ingrediente</th>
-                        <th>Quantidade</th>
-                        <th>Unidade(s)</th>
-                        <th>Valor Unit.</th>
-                        <th>Total</th>
-                    </tr>
+                        <tr>
+                            <th>Ingrediente</th>
+                            <th>Quantidade</th>
+                            <th>Unidade(s)</th>
+                            <th>Valor Unit.</th>
+                            <th>Total</th>
+                        </tr>
                     </thead>
                     <tbody id="autoIngredientsTable"></tbody>
                     <tfoot>
-                    <tr>
-                        <th colspan="3" class="text-end">Subtotal</th>
-                        <th id="autoIngredientsSubtotal">R$ 0,00</th>
-                    </tr>
+                        <tr>
+                            <th colspan="3" class="text-end">Subtotal</th>
+                            <th id="autoIngredientsSubtotal">R$ 0,00</th>
+                        </tr>
                     </tfoot>
                 </table>
             </div>
@@ -90,23 +88,42 @@
                 <h6 class="mb-3">Ingredientes Manuais</h6>
                 <div class="row mb-3 align-items-center">
                     <div class="col-md-4">
-                        <select id="ingredientSelect" class="form-select">
+                        <select id="manualIngredientSelect" class="form-select">
                             <option value="">Selecione o ingrediente</option>
                             <option th:each="i : ${allIngredients}" th:value="${i.id}" th:text="${i.name}"></option>
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <input type="number" id="ingredientQuantity" placeholder="Qtd." class="form-control">
+                        <input type="number" id="manualIngredientQuantity" placeholder="Qtd." class="form-control">
                     </div>
                     <div class="col-md-3">
-                        <input type="number" id="ingredientUnitPrice" placeholder="Preço unitário" class="form-control">
+                        <input type="number" id="manualIngredientUnitPrice" placeholder="Preço unitário" class="form-control">
                     </div>
                     <div class="col-md-2">
-                        <button type="button" id="addIngredientBtn" class="btn btn-outline-light w-100">Adicionar</button>
+                        <button type="button" id="addManualIngredientBtn" class="btn btn-outline-light w-100">Adicionar</button>
                     </div>
                 </div>
 
-                <div id="addedIngredients" class="added-ingredients"></div>
+                <table class="table table-sm table-dark align-middle text-center">
+                    <thead>
+                        <tr>
+                            <th>Ingrediente</th>
+                            <th>Quantidade</th>
+                            <th>Unidade(s)</th>
+                            <th>Valor Unit.</th>
+                            <th>Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="manualIngredientsTable"></tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="4" class="text-end">Subtotal</th>
+                            <th id="manualIngredientsSubtotal">R$ 0,00</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
 
             <hr>
@@ -129,7 +146,6 @@
                     <button type="button" id="addResourceBtn" class="btn btn-outline-light w-100">Adicionar</button>
                 </div>
             </div>
-
             <div id="addedResources" class="mb-4"></div>
 
             <hr>
@@ -163,10 +179,12 @@ function formatCurrency(value) {
 }
 
 function updateTotals() {
-    let ingredientTotal = 0;
-    document.querySelectorAll('#autoIngredientsTable .total')
-        .forEach(i => ingredientTotal += parseFloat(i.value || 0));
-    document.getElementById('autoIngredientsSubtotal').innerText = formatCurrency(ingredientTotal);
+    let total = 0;
+
+    document.querySelectorAll('#autoIngredientsTable .total, #manualIngredientsTable .total')
+        .forEach(i => total += parseFloat(i.value || 0));
+
+    document.getElementById('ingredientTotalDisplay').innerText = formatCurrency(total);
 }
 
 function updateRowTotal(row) {
@@ -227,115 +245,233 @@ async function refreshAutoIngredients() {
         if (!list || list.length === 0) { updateTotals(); return; }
 
         list.forEach(i => {
-            let unitsNeeded = i.unitsNeeded || 0;
-            let finalQuantity = parseFloat(i.quantity || 0);
+            const unitsNeeded = i.unitsNeeded || 0;
+            const finalQuantity = parseFloat(i.quantity || 0);
 
             const row = document.createElement('tr');
-
             row.innerHTML = `
                 <td>${i.ingredientName}</td>
-
                 <td>
                     <div style="display: flex; align-items: center;">
                         <input class="form-control form-control-sm final-quantity"
-                            type="number" min="0" step="0.01"
-                            value="${finalQuantity}" style="flex: 1;">
-
+                               type="number" min="0" step="0.01"
+                               value="${finalQuantity}" style="flex: 1;">
                         <span style="margin-left: 4px;">${i.unitMeasure}</span>
                     </div>
-                    <input type="hidden" name="ingredientIds" value="${i.ingredientId}">
-                    <input type="hidden" name="ingredientQuantities" class="hidden-final-quantity" value="${finalQuantity}">
+                    <input type="hidden" name="autoIngredientIds" value="${i.ingredientId}">
+                    <input type="hidden" name="autoIngredientQuantities" class="hidden-final-quantity" value="${finalQuantity}">
                 </td>
-
                 <td>
                     <input class="form-control form-control-sm units"
-                        type="number" min="0" step="1"
-                        value="${unitsNeeded}">
-                    <input type="hidden" name="ingredientUnits" class="hidden-units" value="${unitsNeeded}">
+                           type="number" min="0" step="1"
+                           value="${unitsNeeded}">
+                    <input type="hidden" name="autoIngredientUnits" class="hidden-units" value="${unitsNeeded}">
                 </td>
-
                 <td>
                     <input class="form-control form-control-sm unit-price"
-                        type="number" min="0" step="0.01" value="0.00">
-                    <input type="hidden" name="ingredientUnitPrices" class="hidden-unit-price" value="0">
+                           type="number" min="0" step="0.01" value="0.00">
+                    <input type="hidden" name="autoIngredientUnitPrices" class="hidden-unit-price" value="0">
                 </td>
-
                 <td>
                     <span class="total-display">R$ 0,00</span>
                     <input class="total" type="hidden" value="0">
-                    <input type="hidden" name="ingredientTotals" class="hidden-total-price" value="0">
+                    <input type="hidden" name="autoIngredientTotals" class="hidden-total-price" value="0">
                 </td>
             `;
-
-
             tbody.appendChild(row);
 
             const qtyInput = row.querySelector('.final-quantity');
             const unitsInput = row.querySelector('.units');
             const unitPriceInput = row.querySelector('.unit-price');
 
-            const hiddenQty     = row.querySelector('.hidden-qty');
-            const hiddenUnits   = row.querySelector('.hidden-units');
-            const hiddenPrice   = row.querySelector('.hidden-price');
-            const hiddenTotal   = row.querySelector('.hidden-total');
-
             qtyInput.addEventListener('blur', async () => {
                 const qty = parseFloat(qtyInput.value || 0);
                 const payload = { ingredientId: i.ingredientId, quantity: qty, drinks: drinksPayload };
-
                 const res = await fetch('/drink/update-quantity', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
                 const data = await res.json();
                 if (!data.error) {
                     unitsInput.value = data.units;
                     qtyInput.value = parseFloat(data.quantity).toFixed(2);
-
-                    hiddenQty.value = data.quantity;
-                    hiddenUnits.value = data.units;
-
                     updateRowTotal(row);
-                    hiddenTotal.value = row.querySelector('.total').value;
                 }
             });
 
             unitsInput.addEventListener('blur', async () => {
                 const units = parseInt(unitsInput.value || 0);
                 const payload = { ingredientId: i.ingredientId, units, drinks: drinksPayload };
-
                 const res = await fetch('/drink/update-units', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
                 const data = await res.json();
                 if (!data.error) {
                     unitsInput.value = data.units;
                     qtyInput.value = parseFloat(data.quantity).toFixed(2);
-
-                    hiddenQty.value = data.quantity;
-                    hiddenUnits.value = data.units;
-
                     updateRowTotal(row);
-                    hiddenTotal.value = row.querySelector('.total').value;
                 }
             });
 
-            unitPriceInput.addEventListener('input', () => {
-                hiddenPrice.value = unitPriceInput.value;
-                updateRowTotal(row);
-                hiddenTotal.value = row.querySelector('.total').value;
-            });
+            unitPriceInput.addEventListener('input', () => updateRowTotal(row));
         });
-
     } catch (error) {
         console.error("Erro:", error);
     }
 
     updateTotals();
 }
+
+document.getElementById('addManualIngredientBtn').addEventListener('click', async () => {
+    const ingredientId = document.getElementById('manualIngredientSelect').value;
+    const quantity = parseFloat(document.getElementById('manualIngredientQuantity').value);
+    const unitPrice = parseFloat(document.getElementById('manualIngredientUnitPrice').value || 0);
+
+    if (!ingredientId || isNaN(quantity)) return;
+
+    const payload = {
+        ingredientId: Number(ingredientId),
+        quantity: quantity,
+        unitPrice: unitPrice
+    };
+
+    try {
+        const res = await fetch('/budget/manual-ingredient/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Erro ao calcular ingrediente manual');
+
+        const data = await res.json();
+        const tbody = document.getElementById('manualIngredientsTable');
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+            <td>${data.ingredientName}</td>
+
+            <td>
+                <div style="display: flex; align-items: center;">
+                    <input class="form-control form-control-sm final-quantity"
+                        type="number" min="0" step="0.01" value="${data.quantity}">
+                    <span style="margin-left: 4px;">${data.unitMeasure}</span>
+                </div>
+
+                <input type="hidden" name="manualIngredientIds" value="${data.ingredientId}">
+                <input type="hidden" name="manualIngredientQuantities"
+                    class="hidden-final-quantity" value="${data.quantity}">
+            </td>
+
+            <td>
+                <input class="form-control form-control-sm units"
+                    type="number" min="0" step="1" value="${data.unitsNeeded}">
+                <input type="hidden" name="manualIngredientUnits"
+                    class="hidden-units" value="${data.unitsNeeded}">
+            </td>
+
+            <td>
+                <input class="form-control form-control-sm unit-price"
+                    type="number" min="0" step="0.01" value="${data.unitPrice}">
+                <input type="hidden" name="manualIngredientUnitPrices"
+                    class="hidden-unit-price" value="${data.unitPrice}">
+            </td>
+
+            <td>
+                <span class="total-display">${formatCurrency(data.totalPrice)}</span>
+                <input class="total" type="hidden" value="${data.totalPrice}">
+                <input type="hidden" name="manualIngredientTotals"
+                    class="hidden-total-price" value="${data.totalPrice}">
+            </td>
+
+            <td>
+                <button class="btn-remove btn btn-outline-light btn-sm" type="button">Remover</button>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+
+        const qtyInput = row.querySelector('.final-quantity');
+        const unitsInput = row.querySelector('.units');
+        const unitPriceInput = row.querySelector('.unit-price');
+        const btnRemove = row.querySelector('.btn-remove');
+
+        qtyInput.addEventListener('blur', async () => {
+            const newQty = parseFloat(qtyInput.value);
+            if (isNaN(newQty)) return;
+
+            const response = await fetch('/budget/manual-ingredient/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ingredientId: data.ingredientId,
+                    quantity: newQty,
+                    unitPrice: parseFloat(unitPriceInput.value || 0)
+                })
+            });
+
+            if (!response.ok) return;
+
+            const updated = await response.json();
+            updateRow(row, updated);
+        });
+
+        unitsInput.addEventListener('blur', async () => {
+            const newUnits = parseInt(unitsInput.value);
+            if (isNaN(newUnits)) return;
+
+            const response = await fetch('/budget/manual-ingredient/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ingredientId: data.ingredientId,
+                    units: newUnits,
+                    unitPrice: parseFloat(unitPriceInput.value || 0)
+                })
+            });
+
+            if (!response.ok) return;
+
+            const updated = await response.json();
+            updateRow(row, updated);
+        });
+
+        unitPriceInput.addEventListener('input', () => updateRowTotal(row));
+
+        btnRemove.addEventListener('click', () => { 
+            row.remove();
+            updateTotals();
+        });
+
+        updateRowTotal(row);
+
+        document.getElementById('manualIngredientSelect').value = "";
+        document.getElementById('manualIngredientQuantity').value = "";
+        document.getElementById('manualIngredientUnitPrice').value = "";
+
+    } catch (error) {
+        console.error("Erro ao calcular ingrediente manual:", error);
+    }
+});
+
+
+function updateRow(row, updated) {
+    row.querySelector('.final-quantity').value = updated.quantity;
+    row.querySelector('.units').value = updated.unitsNeeded;
+    row.querySelector('.unit-price').value = updated.unitPrice;
+
+    row.querySelector('.total').value = updated.totalPrice;
+    row.querySelector('.total-display').innerText = formatCurrency(updated.totalPrice);
+
+    row.querySelector('.hidden-final-quantity').value = updated.quantity;
+    row.querySelector('.hidden-units').value = updated.unitsNeeded;
+    row.querySelector('.hidden-unit-price').value = updated.unitPrice;
+    row.querySelector('.hidden-total-price').value = updated.totalPrice;
+
+    updateTotals();
+}
+
+
 </script>
 
 

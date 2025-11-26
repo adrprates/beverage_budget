@@ -51,7 +51,10 @@ public class Budget {
     private List<BudgetDrink> drinks = new ArrayList<>();
 
     @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BudgetIngredient> ingredients = new ArrayList<>();
+    private List<BudgetAutoIngredient> autoIngredients = new ArrayList<>();
+
+    @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BudgetManualIngredient> manualIngredients = new ArrayList<>();
 
     @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BudgetResource> resources = new ArrayList<>();

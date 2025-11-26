@@ -119,7 +119,7 @@
         </div>
 
         <div id="addedIngredients" class="added-ingredients">
-          <div th:each="bi : *{budgetIngredients}">
+          <div th:each="bi : *{budgetAutoIngredients}">
             <div class="added-ingredient-item">
               <span th:text="${bi.ingredient.name + ' - ' + bi.quantity + ' un - R$' + bi.unitPrice}"></span>
               <button type="button" class="btn-remove" th:onclick="'removeIngredient(' + ${bi.id} + ')'">Remover</button>
