@@ -56,9 +56,11 @@ public class BudgetController {
             @RequestParam(required = false) List<BigDecimal> manualIngredientQuantities,
             @RequestParam(required = false) List<BigDecimal> manualIngredientUnitPrices,
             @RequestParam(required = false) List<Integer> manualIngredientUnits,
-            @RequestParam(required = false) List<Long> resourceIds,
-            @RequestParam(required = false) List<BigDecimal> resourceQuantities,
-            @RequestParam(required = false) List<BigDecimal> resourceUnitPrices,
+            @RequestParam(required = false)  List<Long> resourceIds,
+            @RequestParam(required = false)  List<BigDecimal> resourceQuantities,
+            @RequestParam(required = false)  List<Integer> resourceUnits,
+            @RequestParam(required = false)  List<BigDecimal> resourceUnitPrices,
+            @RequestParam(required = false)  List<BigDecimal> resourceTotals,
             @RequestParam(defaultValue = "false") boolean autoProportion,
             Model model
     ) {
@@ -144,7 +146,11 @@ public class BudgetController {
                 br.setResource(r);
                 br.setQuantity(qty);
                 br.setUnitPrice(price != null ? price : BigDecimal.ZERO);
-                br.setTotalPrice(br.getQuantity().multiply(br.getUnitPrice()));
+                int units = qty != null ? qty.intValue() : 0;
+                br.setUnitsNeeded(resourceUnits.get(i));
+                br.setTotalPrice(resourceTotals.get(i));
+
+                br.setTotalPrice(br.getUnitPrice().multiply(BigDecimal.valueOf(units)));
 
                 budget.getResources().add(br);
             }
@@ -260,9 +266,7 @@ public class BudgetController {
         model.addAttribute("allResources", resourceService.getAll());
         model.addAttribute("allUnits", unitService.getAll());
     }
-
-
-
+    
     @PostMapping("/manual-ingredient/calculate")
     @ResponseBody
     public ManualIngredientResponseDto calculateManualIngredient(@RequestBody ManualIngredientDto dto) {

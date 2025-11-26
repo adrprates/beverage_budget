@@ -128,25 +128,59 @@
 
             <hr>
 
-            <h5 class="card-title mb-3">Recursos</h5>
-            <div class="row mb-3 align-items-center">
-                <div class="col-md-5">
+            <div class="row g-2 mb-3">
+            <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Recurso</label>
                     <select id="resourceSelect" class="form-select">
-                        <option value="">Selecione o recurso</option>
-                        <option th:each="r : ${allResources}" th:value="${r.id}" th:text="${r.name}"></option>
+                        <option value="">Selecione um recurso</option>
+                        <th:block th:each="r : ${allResources}">
+                            <option th:value="${r.id}" th:text="${r.name}"></option>
+                        </th:block>
                     </select>
                 </div>
+
                 <div class="col-md-3">
-                    <input type="number" id="resourceQuantity" placeholder="Qtd." class="form-control">
+                    <label class="form-label">Quantidade</label>
+                    <input id="resourceQuantity" type="number" min="0" step="0.01"
+                        class="form-control">
                 </div>
-                <div class="col-md-2">
-                    <input type="number" id="resourceUnitPrice" placeholder="Preço" class="form-control">
+
+                <div class="col-md-3">
+                    <label class="form-label">Valor Unitário (R$)</label>
+                    <input id="resourceUnitPrice" type="number" min="0" step="0.01"
+                        class="form-control">
                 </div>
-                <div class="col-md-2">
-                    <button type="button" id="addResourceBtn" class="btn btn-outline-light w-100">Adicionar</button>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button id="addResourceBtn" type="button" class="btn btn-primary w-100">
+                        Adicionar
+                    </button>
                 </div>
             </div>
-            <div id="addedResources" class="mb-4"></div>
+
+            <h6 class="mb-3">Recursos adicionados</h6>
+
+            <table class="table table-sm table-dark align-middle text-center">
+                <thead>
+                    <tr>
+                        <th>Recurso</th>
+                        <th>Quantidade</th>
+                        <th>Unidade(s)</th>
+                        <th>Valor Unit.</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="resourcesTable"></tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="4" class="text-end">Subtotal</th>
+                        <th id="resourceSubtotal">R$ 0,00</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
 
             <hr>
 
@@ -454,24 +488,97 @@ document.getElementById('addManualIngredientBtn').addEventListener('click', asyn
     }
 });
 
+document.getElementById('addResourceBtn').addEventListener('click', () => {
+    const resourceId = document.getElementById('resourceSelect').value;
+    const quantity = parseFloat(document.getElementById('resourceQuantity').value);
+    const unitPrice = parseFloat(document.getElementById('resourceUnitPrice').value || 0);
 
-function updateRow(row, updated) {
-    row.querySelector('.final-quantity').value = updated.quantity;
-    row.querySelector('.units').value = updated.unitsNeeded;
-    row.querySelector('.unit-price').value = updated.unitPrice;
+    if (!resourceId || isNaN(quantity)) return;
 
-    row.querySelector('.total').value = updated.totalPrice;
-    row.querySelector('.total-display').innerText = formatCurrency(updated.totalPrice);
+    const resourceName = document.getElementById('resourceSelect')
+                                .selectedOptions[0].text;
 
-    row.querySelector('.hidden-final-quantity').value = updated.quantity;
-    row.querySelector('.hidden-units').value = updated.unitsNeeded;
-    row.querySelector('.hidden-unit-price').value = updated.unitPrice;
-    row.querySelector('.hidden-total-price').value = updated.totalPrice;
+    const units = quantity; 
+    const total = units * unitPrice;
+
+    const tbody = document.getElementById('resourcesTable');
+    const row = document.createElement('tr');
+
+    row.innerHTML = `
+        <td>${resourceName}</td>
+
+        <td>
+            <input class="form-control form-control-sm quantity"
+                   type="number" min="0" step="0.01" value="${quantity}">
+            <input type="hidden" name="resourceIds" value="${resourceId}">
+            <input type="hidden" name="resourceQuantities" class="hidden-quantity" value="${quantity}">
+        </td>
+
+        <td>
+            <input class="form-control form-control-sm units"
+                   type="number" min="0" step="1" value="${units}">
+            <input type="hidden" name="resourceUnits" class="hidden-units" value="${units}">
+        </td>
+
+        <td>
+            <input class="form-control form-control-sm unit-price"
+                   type="number" min="0" step="0.01" value="${unitPrice}">
+            <input type="hidden" name="resourceUnitPrices"
+                   class="hidden-unit-price" value="${unitPrice}">
+        </td>
+
+        <td>
+            <span class="total-display">${formatCurrency(total)}</span>
+            <input class="total" type="hidden" value="${total}">
+            <input type="hidden" name="resourceTotals"
+                   class="hidden-total-price" value="${total}">
+        </td>
+
+        <td>
+            <button class="btn-remove btn btn-outline-light btn-sm" type="button">Remover</button>
+        </td>
+    `;
+
+    tbody.appendChild(row);
+
+    const qtyInput = row.querySelector('.quantity');
+    const unitsInput = row.querySelector('.units');
+    const unitPriceInput = row.querySelector('.unit-price');
+    const btnRemove = row.querySelector('.btn-remove');
+
+    function recalc() {
+        const q = parseFloat(qtyInput.value || 0);
+        const u = parseInt(unitsInput.value || 0);
+        const p = parseFloat(unitPriceInput.value || 0);
+
+        const t = u * p;
+
+        row.querySelector('.total').value = t;
+        row.querySelector('.total-display').innerText = formatCurrency(t);
+
+        row.querySelector('.hidden-quantity').value = q;
+        row.querySelector('.hidden-units').value = u;
+        row.querySelector('.hidden-unit-price').value = p;
+        row.querySelector('.hidden-total-price').value = t;
+
+        updateTotals();
+    }
+
+    qtyInput.addEventListener('input', recalc);
+    unitsInput.addEventListener('input', recalc);
+    unitPriceInput.addEventListener('input', recalc);
+
+    btnRemove.addEventListener('click', () => {
+        row.remove();
+        updateTotals();
+    });
 
     updateTotals();
-}
 
-
+    document.getElementById('resourceSelect').value = "";
+    document.getElementById('resourceQuantity').value = "";
+    document.getElementById('resourceUnitPrice').value = "";
+});
 </script>
 
 

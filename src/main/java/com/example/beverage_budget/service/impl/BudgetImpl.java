@@ -74,7 +74,12 @@ public class BudgetImpl implements BudgetService {
             }
         }
 
-
+        if(budget.getResources() != null) {
+            for (BudgetResource br : budget.getResources()) {
+                br.setBudget(budget);
+            }
+        }
+        
         budgetRepository.save(budget);
     }
 
