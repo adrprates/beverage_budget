@@ -5,6 +5,8 @@ import com.example.beverage_budget.repository.UnitOfMeasureRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class UnitOfMeasureInitializer implements CommandLineRunner {
 
@@ -15,18 +17,23 @@ public class UnitOfMeasureInitializer implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
-        if (unitRepository.count() == 0) {
-            unitRepository.save(new UnitOfMeasure("ML", "Mililitros"));
-            unitRepository.save(new UnitOfMeasure("L", "Litros"));
-            unitRepository.save(new UnitOfMeasure("G", "Gramas"));
-            unitRepository.save(new UnitOfMeasure("KG", "Quilos"));
-            unitRepository.save(new UnitOfMeasure("UN", "Unidade"));
-            unitRepository.save(new UnitOfMeasure("FAT", "Fatia"));
-            unitRepository.save(new UnitOfMeasure("GOTA", "Gota / Pitada"));
-            unitRepository.save(new UnitOfMeasure("COP", "Copo"));
-            unitRepository.save(new UnitOfMeasure("COLS", "Colher de sopa"));
-            unitRepository.save(new UnitOfMeasure("COLC", "Colher de chá"));
+    public void run(String... args) {
+        List<UnitOfMeasure> unitsToEnsure = List.of(
+                new UnitOfMeasure("ML", "Mililitros"),
+                new UnitOfMeasure("L", "Litros"),
+                new UnitOfMeasure("G", "Gramas"),
+                new UnitOfMeasure("KG", "Quilos"),
+                new UnitOfMeasure("UN", "Unidade"),
+                new UnitOfMeasure("FAT", "Fatia"),
+                new UnitOfMeasure("GOTA", "Gota / Pitada"),
+                new UnitOfMeasure("COP", "Copo"),
+                new UnitOfMeasure("COLS", "Colher de sopa"),
+                new UnitOfMeasure("COLC", "Colher de chá")
+        );
+
+        for (UnitOfMeasure u : unitsToEnsure) {
+            unitRepository.findByCode(u.getCode())
+                    .orElseGet(() -> unitRepository.save(u));
         }
     }
 }

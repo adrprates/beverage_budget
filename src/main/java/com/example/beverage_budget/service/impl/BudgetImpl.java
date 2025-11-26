@@ -54,51 +54,23 @@ public class BudgetImpl implements BudgetService {
     }
 
     @Override
+    @Transactional
     public void save(Budget budget) {
-        if (budget.getStatus() == null) {
-            budget.setStatus(BudgetStatus.PENDING);
-        }
-
-        budgetRepository.save(budget);
-
-        if (budget.getId() != null) {
-            budgetDrinkRepository.deleteByBudgetId(budget.getId());
-            budgetIngredientRepository.deleteByBudgetId(budget.getId());
-            budgetResourceRepository.deleteByBudgetId(budget.getId());
-        }
 
         if (budget.getDrinks() != null) {
             for (BudgetDrink bd : budget.getDrinks()) {
                 bd.setBudget(budget);
-                budgetDrinkRepository.save(bd);
             }
         }
 
         if (budget.getIngredients() != null) {
             for (BudgetIngredient bi : budget.getIngredients()) {
                 bi.setBudget(budget);
-                if (bi.getQuantity() != null && bi.getUnitPrice() != null) {
-                    bi.setTotalPrice(bi.getQuantity().multiply(bi.getUnitPrice()));
-                } else {
-                    bi.setTotalPrice(BigDecimal.ZERO);
-                }
-                budgetIngredientRepository.save(bi);
             }
         }
 
-        if (budget.getResources() != null) {
-            for (BudgetResource br : budget.getResources()) {
-                br.setBudget(budget);
-                if (br.getQuantity() != null && br.getUnitPrice() != null) {
-                    br.setTotalPrice(br.getQuantity().multiply(br.getUnitPrice()));
-                } else {
-                    br.setTotalPrice(BigDecimal.ZERO);
-                }
-                budgetResourceRepository.save(br);
-            }
-        }
 
-        calculateTotals(budget);
+        budgetRepository.save(budget);
     }
 
     @Override
@@ -217,8 +189,7 @@ public class BudgetImpl implements BudgetService {
 
             double volumeBase = convertToBase(volume, unit);
             int unitsNeeded = (int) Math.ceil(totalBase / volumeBase);
-
-            bi.setUnits(unitsNeeded);
+            bi.setUnitsNeeded(unitsNeeded);
 
             if ("L".equalsIgnoreCase(unit) || "KG".equalsIgnoreCase(unit)) {
                 bi.setQuantity(BigDecimal.valueOf(totalBase / 1000.0));
@@ -255,4 +226,7 @@ public class BudgetImpl implements BudgetService {
         return list.stream().filter(bi -> bi.getIngredient().getId().equals(ingredientId))
                 .findFirst().orElse(null);
     }
+
+
+
 }

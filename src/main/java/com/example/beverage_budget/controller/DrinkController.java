@@ -232,7 +232,7 @@ public class DrinkController {
             m.put("unitMeasure", ing.getUnitMeasure().getCode());
             m.put("ingredientVolume", ing.getVolume());
             m.put("quantity", bi.getQuantity());
-            m.put("unitsNeeded", bi.getUnits());
+            m.put("unitsNeeded", bi.getUnitsNeeded());
             m.put("unitPrice", bi.getUnitPrice());
             m.put("totalPrice", bi.getTotalPrice());
             return m;
@@ -256,7 +256,7 @@ public class DrinkController {
 
         double newQuantityBase = budgetService.calculateQuantityFromUnits(units, volumeBase);
         bi.setQuantity(BigDecimal.valueOf(newQuantityBase));
-        bi.setUnits(units);
+        bi.setUnitsNeeded(units);
 
         double displayQuantity = newQuantityBase;
         String unit = bi.getIngredient().getUnitMeasure().getCode();
@@ -264,7 +264,7 @@ public class DrinkController {
 
         return Map.of(
                 "quantity", displayQuantity,
-                "units", bi.getUnits()
+                "units", bi.getUnitsNeeded()
         );
     }
 
@@ -289,14 +289,14 @@ public class DrinkController {
 
         int newUnits = budgetService.calculateUnitsFromQuantity(quantityBase, volumeBase);
         bi.setQuantity(BigDecimal.valueOf(quantityBase));
-        bi.setUnits(newUnits);
+        bi.setUnitsNeeded(newUnits);
 
         double displayQuantity = quantityBase;
         if ("L".equalsIgnoreCase(unit) || "KG".equalsIgnoreCase(unit)) displayQuantity /= 1000.0;
 
         return Map.of(
                 "quantity", displayQuantity,
-                "units", bi.getUnits()
+                "units", bi.getUnitsNeeded()
         );
     }
 }

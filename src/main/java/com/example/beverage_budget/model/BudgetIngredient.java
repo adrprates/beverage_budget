@@ -32,5 +32,5 @@ public class BudgetIngredient {
     private BigDecimal totalPrice;
 
     @Column(name = "units_needed", nullable = false)
-    private Integer units;
+    private Integer unitsNeeded;
 }
