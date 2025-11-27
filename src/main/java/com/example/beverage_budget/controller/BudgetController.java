@@ -61,7 +61,6 @@ public class BudgetController {
             @RequestParam(required = false) List<Integer> manualIngredientUnits,
             @RequestParam(required = false)  List<Long> resourceIds,
             @RequestParam(required = false)  List<BigDecimal> resourceQuantities,
-            @RequestParam(required = false)  List<Integer> resourceUnits,
             @RequestParam(required = false)  List<BigDecimal> resourceUnitPrices,
             @RequestParam(required = false)  List<BigDecimal> resourceTotals,
             @RequestParam(defaultValue = "false") boolean autoProportion,
@@ -151,7 +150,6 @@ public class BudgetController {
                 br.setQuantity(qty);
                 br.setUnitPrice(price != null ? price : BigDecimal.ZERO);
                 int units = qty != null ? qty.intValue() : 0;
-                br.setUnitsNeeded(resourceUnits.get(i));
                 br.setTotalPrice(resourceTotals.get(i));
 
                 br.setTotalPrice(br.getUnitPrice().multiply(BigDecimal.valueOf(units)));

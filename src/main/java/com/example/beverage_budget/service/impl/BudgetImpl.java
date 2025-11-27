@@ -251,24 +251,44 @@ public class BudgetImpl implements BudgetService {
         if (budget == null || budget.getManualIngredients() == null) return;
 
         for (BudgetManualIngredient mi : budget.getManualIngredients()) {
+
             Ingredient ing = mi.getIngredient();
-            if (ing == null || ing.getVolume() == null || ing.getVolume().doubleValue() == 0) continue;
+            if (ing == null || ing.getVolume() == null || ing.getVolume().doubleValue() == 0)
+                continue;
 
-            BigDecimal totalQuantity = mi.getQuantity();
+            double volumePerUnit = ing.getVolume().doubleValue();
 
-            int unitsNeeded = calculateUnitsFromQuantity(totalQuantity.doubleValue(), ing.getVolume().doubleValue());
-            mi.setUnitsNeeded(unitsNeeded);
+            if (mi.getUnitsNeeded() != null && mi.getUnitsNeeded() > 0) {
 
-            BigDecimal adjustedQuantity = BigDecimal.valueOf(calculateQuantityFromUnits(unitsNeeded, ing.getVolume().doubleValue()));
-            mi.setQuantity(adjustedQuantity);
+                BigDecimal adjustedQuantity =
+                        BigDecimal.valueOf(calculateQuantityFromUnits(mi.getUnitsNeeded(), volumePerUnit));
+
+                mi.setQuantity(adjustedQuantity);
+
+            } else {
+                BigDecimal totalQuantity = mi.getQuantity();
+
+                int unitsNeeded = calculateUnitsFromQuantity(
+                        totalQuantity.doubleValue(),
+                        volumePerUnit
+                );
+                mi.setUnitsNeeded(unitsNeeded);
+
+                BigDecimal adjustedQuantity =
+                        BigDecimal.valueOf(calculateQuantityFromUnits(unitsNeeded, volumePerUnit));
+                mi.setQuantity(adjustedQuantity);
+            }
 
             if (mi.getUnitPrice() != null) {
-                mi.setTotalPrice(mi.getUnitPrice().multiply(BigDecimal.valueOf(unitsNeeded)));
+                mi.setTotalPrice(
+                        mi.getUnitPrice().multiply(BigDecimal.valueOf(mi.getUnitsNeeded()))
+                );
             }
         }
 
         calculateTotals(budget);
         budgetRepository.save(budget);
     }
+
 
 }

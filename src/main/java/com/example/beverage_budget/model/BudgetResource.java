@@ -28,9 +28,6 @@ public class BudgetResource {
     @Column(name = "unit_price", nullable = false)
     private BigDecimal unitPrice;
 
-    @Column(name = "units_needed", nullable = false)
-    private Integer unitsNeeded;
-
     @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
 }
