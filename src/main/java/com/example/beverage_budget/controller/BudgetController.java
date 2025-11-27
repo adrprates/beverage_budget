@@ -49,9 +49,12 @@ public class BudgetController {
             BindingResult bindingResult,
             @RequestParam(required = false) List<Long> drinkIds,
             @RequestParam(required = false) List<BigDecimal> drinkQuantities,
-            @RequestParam(required = false) List<Long> ingredientIds,
-            @RequestParam(required = false) List<BigDecimal> ingredientQuantities,
-            @RequestParam(required = false) List<BigDecimal> ingredientUnitPrices,
+            @RequestParam(required = false) List<Long> autoIngredientIds,
+            @RequestParam(required = false) List<BigDecimal> autoIngredientQuantities,
+            @RequestParam(required = false) List<BigDecimal> autoIngredientUnitPrices,
+            @RequestParam(required = false) List<Integer> autoIngredientUnits,
+
+
             @RequestParam(required = false) List<Long> manualIngredientIds,
             @RequestParam(required = false) List<BigDecimal> manualIngredientQuantities,
             @RequestParam(required = false) List<BigDecimal> manualIngredientUnitPrices,
@@ -83,11 +86,12 @@ public class BudgetController {
         }
 
         budget.getAutoIngredients().clear();
-        if (ingredientIds != null) {
-            for (int i = 0; i < ingredientIds.size(); i++) {
-                Ingredient ing = ingredientService.getById(ingredientIds.get(i));
-                BigDecimal qty = ingredientQuantities.get(i);
-                BigDecimal price = ingredientUnitPrices.get(i);
+        if (autoIngredientIds != null) {
+            for (int i = 0; i < autoIngredientIds.size(); i++) {
+                Ingredient ing = ingredientService.getById(autoIngredientIds.get(i));
+                BigDecimal qty = autoIngredientQuantities.get(i);
+                BigDecimal price = autoIngredientUnitPrices.get(i);
+                Integer unitsNeeded = autoIngredientUnits.get(i);
 
                 BudgetAutoIngredient bi = new BudgetAutoIngredient();
                 bi.setBudget(budget);
@@ -95,7 +99,7 @@ public class BudgetController {
                 bi.setQuantity(qty);
                 bi.setUnitPrice(price != null ? price : BigDecimal.ZERO);
                 bi.setTotalPrice(bi.getQuantity().multiply(bi.getUnitPrice()));
-                bi.setUnitsNeeded(0);
+                bi.setUnitsNeeded(unitsNeeded);
 
                 budget.getAutoIngredients().add(bi);
             }
@@ -279,7 +283,7 @@ public class BudgetController {
         if (dto.getQuantity() != null && dto.getQuantity() > 0) {
             quantity = dto.getQuantity();
             unitsNeeded = budgetService.calculateUnitsFromQuantity(quantity, volumePorUnidade);
-            quantity = budgetService.calculateQuantityFromUnits(unitsNeeded, volumePorUnidade); // ajusta para unidades inteiras
+            quantity = budgetService.calculateQuantityFromUnits(unitsNeeded, volumePorUnidade);
         }
         else if (dto.getUnits() != null && dto.getUnits() > 0) {
             unitsNeeded = dto.getUnits();

@@ -225,8 +225,13 @@ function updateRowTotal(row) {
     const units = parseFloat(row.querySelector('.units').value || 0);
     const price = parseFloat(row.querySelector('.unit-price').value || 0);
     const total = units * price;
+
     row.querySelector('.total').value = total;
     row.querySelector('.total-display').innerText = formatCurrency(total);
+
+    row.querySelector('.hidden-unit-price').value = price;
+    row.querySelector('.hidden-total-price').value = total;
+
     updateTotals();
 }
 
@@ -317,6 +322,15 @@ async function refreshAutoIngredients() {
             const qtyInput = row.querySelector('.final-quantity');
             const unitsInput = row.querySelector('.units');
             const unitPriceInput = row.querySelector('.unit-price');
+
+            // 🔥 atualização dos hidden inputs — ADICIONADO
+            qtyInput.addEventListener('blur', () => {
+                row.querySelector('.hidden-final-quantity').value = qtyInput.value;
+            });
+
+            unitsInput.addEventListener('blur', () => {
+                row.querySelector('.hidden-units').value = unitsInput.value;
+            });
 
             qtyInput.addEventListener('blur', async () => {
                 const qty = parseFloat(qtyInput.value || 0);
