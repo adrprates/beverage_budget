@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<<div class="container py-5">
+<div class="container py-5">
     <div class="card">
         <h2 class="card-title mb-4 text-center">Novo Orçamento</h2>
 
@@ -63,6 +63,11 @@
             <hr>
 
             <h5 class="mb-3">Ingredientes dos Drinks Selecionados</h5>
+
+            <button type="button" id="restoreProportionBtn" class="btn btn-secondary btn-sm mb-2">
+                Restaurar Proporção
+            </button>
+
             <table class="table table-sm table-striped">
                 <thead>
                     <tr>
@@ -376,7 +381,13 @@ async function refreshAutoIngredients() {
     }
 
     updateTotals();
+
+    
 }
+
+document.getElementById("restoreProportionBtn").addEventListener("click", () => {
+    refreshAutoIngredients();
+});
 
 document.getElementById('addManualIngredientBtn').addEventListener('click', async () => {
     const ingredientId = document.getElementById('manualIngredientSelect').value;
