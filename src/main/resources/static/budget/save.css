@@ -1,173 +1,143 @@
-/* ======== BASE ======== */
 body {
-  background-color: #121212;
-  color: #fff;
-  font-family: 'Inter', sans-serif;
-  padding-top: 70px;
-}
-
-/* ======== NAVBAR ======== */
-.custom-navbar {
-  background-color: #1f1f1f;
-  border-bottom: 1px solid #333;
-}
-
-/* ======== CONTAINERS ======== */
-.dashboard-container {
-  max-width: 1000px;
-  margin: 0 auto;
-  margin-top: 40px;
+    background: #c7c7c7;
+    color: #333;
+    font-family: Arial, sans-serif;
+    padding-top: 70px;
 }
 
 .card {
-  background-color: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.4);
-  padding: 30px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    padding: 20px;
 }
 
-/* ======== TITLES & TEXT ======== */
-h1, h2, h3, h4, h5 {
-  font-weight: 600;
-}
-
-.highlight {
-  color: #e5c07b;
-}
-
-.form-label {
-  color: #ddd;
-  font-weight: 500;
-}
-
-/* ======== BUTTONS ======== */
-.btn-card, .btn-outline-light {
-  border-color: #e5c07b;
-  color: #e5c07b;
-  transition: all 0.3s;
-}
-
-.btn-card:hover, .btn-outline-light:hover {
-  background-color: #e5c07b;
-  color: #121212;
-}
-
-.btn-success {
-  background-color: #28a745;
-  border: none;
-}
-
-.btn-success:hover {
-  background-color: #34d058;
-  color: #121212;
-}
-
-/* ======== BUTTON: CALCULAR PROPORCIONALIDADE ======== */
-.btn-proportion {
-  background-color: #007bff;
-  color: #fff;
-  border: 1px solid #006fe6;
-  transition: all 0.3s ease;
-}
-
-.btn-proportion:hover {
-  background-color: #3399ff;
-  border-color: #3399ff;
-  color: #121212;
-}
-
-/* ======== FORM FIELDS ======== */
 .form-control, .form-select {
-  background-color: #2b2b2b;
-  border: 1px solid #3a3a3a;
-  color: #fff;
+    background: #fff;
+    border: 1px solid #ccc;
+    color: #333;
 }
 
 .form-control:focus, .form-select:focus {
-  border-color: #e5c07b;
-  box-shadow: 0 0 5px rgba(229, 192, 123, 0.5);
+    border-color: #0d6efd;
+    box-shadow: none;
 }
 
-/* ======== ADDED ITEMS (Drinks, Ingredientes, Recursos) ======== */
-.added-item {
-  background-color: #2b2b2b;
-  border-radius: 6px;
-  padding: 10px 14px;
-  margin-bottom: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.95rem;
+.btn-primary {
+    background: #0d6efd;
+    color: #fff;
+    border: 1px solid #0d6efd;
+    transition: 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #fff;
+    color: #0d6efd;
+    border: 1px solid #0d6efd;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: #fff;
+    border: 1px solid #6c757d;
+}
+
+.btn-secondary:hover {
+    background: #fff;
+    color: #6c757d;
+    border: 1px solid #6c757d;
 }
 
 .btn-remove {
-  background: none;
-  border: none;
-  color: #ff6b6b;
-  cursor: pointer;
-  font-size: 0.9rem;
-  margin-left: 10px;
-  transition: color 0.3s ease;
+    background: #ad2222;
+    color: #fff;
+    border: 1px solid #ad2222;
+    transition: 0.2s ease;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
 }
 
 .btn-remove:hover {
-  color: #ff8787;
+    background: #fff;
+    color: #ad2222;
 }
 
-/* ======== TABLES (Ingredientes Automáticos) ======== */
-.table-dark {
-  background-color: #1e1e1e;
-  color: #e0e0e0;
-  border-color: #333;
+.added-item, .added-ingredient-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
 }
 
-.table-dark thead {
-  background-color: #2a2a2a;
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); 
+    background: #f8f9fa; 
 }
 
-.table-dark th, .table-dark td {
-  vertical-align: middle;
+table th {
+    background: #dee2e6; 
+    color: #212529;
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: center;
+    border-bottom: 2px solid #ced4da;
 }
 
-.table-dark input {
-  background-color: #2b2b2b;
-  border: 1px solid #3a3a3a;
-  color: #fff;
-  text-align: center;
+table td {
+    background: #ffffff; 
+    color: #212529;
+    padding: 8px 12px;
+    text-align: center;
+    border-bottom: 1px solid #dee2e6;
 }
 
-.table-dark input:focus {
-  border-color: #e5c07b;
-  box-shadow: 0 0 3px rgba(229, 192, 123, 0.5);
+table tr:last-child td {
+    border-bottom: none; 
 }
 
-/* ======== SECTION SEPARATORS ======== */
-hr {
-  border: none;
-  border-top: 1px solid #333;
-  margin: 30px 0;
+table tr:hover td {
+    background: #f1f3f5; 
 }
 
-/* ======== TOTALS ======== */
-.text-end h5 {
-  margin-bottom: 8px;
-  color: #e5c07b;
-  font-weight: 600;
-}
-
-/* ======== RESPONSIVE ======== */
-@media (max-width: 768px) {
-  .added-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .btn-remove {
-    margin-top: 5px;
-  }
-
-  .table-dark td input {
+table input {
     width: 80px;
-  }
+    text-align: center;
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 3px 5px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 20px 0;
+}
+
+.text-end h5, .text-end h6 {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .added-item, .added-ingredient-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    table input {
+        width: 60px;
+    }
 }
