@@ -139,7 +139,6 @@
             <hr>
 
             <div class="row g-2 mb-3">
-            <div class="row g-2 mb-3">
                 <div class="col-md-4">
                     <label class="form-label">Recurso</label>
                     <select id="resourceSelect" class="form-select">
@@ -176,7 +175,6 @@
                     <tr>
                         <th>Recurso</th>
                         <th>Quantidade</th>
-                        <th>Unidade(s)</th>
                         <th>Valor Unit.</th>
                         <th>Total</th>
                         <th></th>
@@ -185,12 +183,13 @@
                 <tbody id="resourcesTable"></tbody>
                 <tfoot>
                     <tr>
-                        <th colspan="4" class="text-end">Subtotal</th>
+                        <th colspan="3" class="text-end">Subtotal</th>
                         <th id="resourceSubtotal">R$ 0,00</th>
                         <th></th>
                     </tr>
                 </tfoot>
             </table>
+
 
             <hr>
 
@@ -226,7 +225,9 @@ function updateTotals() {
     let total = 0;
 
     document.querySelectorAll('#autoIngredientsTable .total, #manualIngredientsTable .total')
-        .forEach(i => total += parseFloat(i.value || 0));
+        .forEach(input => {
+            total += parseFloat(input.value || 0);
+        });
 
     document.getElementById('ingredientTotalDisplay').innerText = formatCurrency(total);
 }
@@ -278,7 +279,11 @@ async function refreshAutoIngredients() {
     const qtys = [...document.getElementsByName('drinkQuantities')].map(i => parseFloat(i.value));
     const tbody = document.getElementById('autoIngredientsTable');
     tbody.innerHTML = '';
-    if (ids.length === 0) { updateTotals(); return; }
+
+    if (ids.length === 0) {
+        updateTotals();
+        return;
+    }
 
     const drinksPayload = ids.map((id, idx) => ({ drinkId: id, quantity: qtys[idx] }));
 
@@ -291,7 +296,10 @@ async function refreshAutoIngredients() {
         if (!res.ok) throw new Error('Erro ao calcular ingredientes');
 
         const list = await res.json();
-        if (!list || list.length === 0) { updateTotals(); return; }
+        if (!list || list.length === 0) {
+            updateTotals();
+            return;
+        }
 
         list.forEach(i => {
             const unitsNeeded = i.unitsNeeded || 0;
@@ -324,30 +332,27 @@ async function refreshAutoIngredients() {
                 <td>
                     <span class="total-display">R$ 0,00</span>
                     <input class="total" type="hidden" value="0">
-                    <input type="hidden" name="autoIngredientTotals" class="hidden-total-price" value="0">
+                    <input type="hidden" class="hidden-total-price" value="0">
                 </td>
             `;
+
             tbody.appendChild(row);
 
             const qtyInput = row.querySelector('.final-quantity');
             const unitsInput = row.querySelector('.units');
             const unitPriceInput = row.querySelector('.unit-price');
 
-            qtyInput.addEventListener('blur', () => {
-                row.querySelector('.hidden-final-quantity').value = qtyInput.value;
-            });
-
-            unitsInput.addEventListener('blur', () => {
-                row.querySelector('.hidden-units').value = unitsInput.value;
-            });
-
             qtyInput.addEventListener('blur', async () => {
+                row.querySelector('.hidden-final-quantity').value = qtyInput.value;
+
                 const qty = parseFloat(qtyInput.value || 0);
                 const payload = { ingredientId: i.ingredientId, quantity: qty, drinks: drinksPayload };
+
                 const res = await fetch('/drink/update-quantity', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+
                 const data = await res.json();
                 if (!data.error) {
                     unitsInput.value = data.units;
@@ -357,12 +362,16 @@ async function refreshAutoIngredients() {
             });
 
             unitsInput.addEventListener('blur', async () => {
+                row.querySelector('.hidden-units').value = unitsInput.value;
+
                 const units = parseInt(unitsInput.value || 0);
                 const payload = { ingredientId: i.ingredientId, units, drinks: drinksPayload };
+
                 const res = await fetch('/drink/update-units', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+
                 const data = await res.json();
                 if (!data.error) {
                     unitsInput.value = data.units;
@@ -550,8 +559,7 @@ document.getElementById('addResourceBtn').addEventListener('click', () => {
     const resourceName = document.getElementById('resourceSelect')
                                 .selectedOptions[0].text;
 
-    const units = quantity; 
-    const total = units * unitPrice;
+    const total = quantity * unitPrice;
 
     const tbody = document.getElementById('resourcesTable');
     const row = document.createElement('tr');
@@ -563,13 +571,8 @@ document.getElementById('addResourceBtn').addEventListener('click', () => {
             <input class="form-control form-control-sm quantity"
                    type="number" min="0" step="0.01" value="${quantity}">
             <input type="hidden" name="resourceIds" value="${resourceId}">
-            <input type="hidden" name="resourceQuantities" class="hidden-quantity" value="${quantity}">
-        </td>
-
-        <td>
-            <input class="form-control form-control-sm units"
-                   type="number" min="0" step="1" value="${units}">
-            <input type="hidden" name="resourceUnits" class="hidden-units" value="${units}">
+            <input type="hidden" name="resourceQuantities"
+                   class="hidden-quantity" value="${quantity}">
         </td>
 
         <td>
@@ -594,22 +597,18 @@ document.getElementById('addResourceBtn').addEventListener('click', () => {
     tbody.appendChild(row);
 
     const qtyInput = row.querySelector('.quantity');
-    const unitsInput = row.querySelector('.units');
     const unitPriceInput = row.querySelector('.unit-price');
     const btnRemove = row.querySelector('.btn-remove');
 
     function recalc() {
         const q = parseFloat(qtyInput.value || 0);
-        const u = parseInt(unitsInput.value || 0);
         const p = parseFloat(unitPriceInput.value || 0);
-
-        const t = u * p;
+        const t = q * p;
 
         row.querySelector('.total').value = t;
         row.querySelector('.total-display').innerText = formatCurrency(t);
 
         row.querySelector('.hidden-quantity').value = q;
-        row.querySelector('.hidden-units').value = u;
         row.querySelector('.hidden-unit-price').value = p;
         row.querySelector('.hidden-total-price').value = t;
 
@@ -617,7 +616,6 @@ document.getElementById('addResourceBtn').addEventListener('click', () => {
     }
 
     qtyInput.addEventListener('input', recalc);
-    unitsInput.addEventListener('input', recalc);
     unitPriceInput.addEventListener('input', recalc);
 
     btnRemove.addEventListener('click', () => {
@@ -631,8 +629,11 @@ document.getElementById('addResourceBtn').addEventListener('click', () => {
     document.getElementById('resourceQuantity').value = "";
     document.getElementById('resourceUnitPrice').value = "";
 });
-</script>
 
+document.querySelector('form').addEventListener('submit', () => {
+        document.querySelectorAll('input').forEach(input => input.blur());
+    });
+</script>
 
 </body>
 </html>

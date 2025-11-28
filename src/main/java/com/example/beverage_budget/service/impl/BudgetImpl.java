@@ -90,21 +90,21 @@ public class BudgetImpl implements BudgetService {
 
     @Override
     public void calculateTotals(Budget budget) {
-        BigDecimal totalIngredients = BigDecimal.ZERO;
+
+        BigDecimal totalAuto = BigDecimal.ZERO;
+        BigDecimal totalManual = BigDecimal.ZERO;
         BigDecimal totalResources = BigDecimal.ZERO;
 
         if (budget.getAutoIngredients() != null) {
-            totalIngredients = budget.getAutoIngredients().stream()
+            totalAuto = budget.getAutoIngredients().stream()
                     .map(BudgetAutoIngredient::getTotalPrice)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
         if (budget.getManualIngredients() != null) {
-            totalIngredients = totalIngredients.add(
-                    budget.getManualIngredients().stream()
-                            .map(BudgetManualIngredient::getTotalPrice)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add)
-            );
+            totalManual = budget.getManualIngredients().stream()
+                    .map(BudgetManualIngredient::getTotalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
         if (budget.getResources() != null) {
@@ -113,7 +113,11 @@ public class BudgetImpl implements BudgetService {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
-        BigDecimal totalCost = totalIngredients.add(totalResources);
+        budget.setTotalAutoIngredientCost(totalAuto);
+        budget.setTotalManualIngredientCost(totalManual);
+        budget.setTotalResourceCost(totalResources);
+
+        BigDecimal totalCost = totalAuto.add(totalManual).add(totalResources);
         budget.setTotalCost(totalCost);
 
         BigDecimal markup = (budget.getMarkupPercentage() != null)
@@ -122,13 +126,12 @@ public class BudgetImpl implements BudgetService {
 
         BigDecimal suggestedFinalPrice = totalCost.add(totalCost.multiply(markup));
 
-        if (budget.getCustomFinalPrice() != null && budget.getCustomFinalPrice().compareTo(BigDecimal.ZERO) > 0) {
+        if (budget.getCustomFinalPrice() != null &&
+                budget.getCustomFinalPrice().compareTo(BigDecimal.ZERO) > 0) {
             budget.setFinalPrice(budget.getCustomFinalPrice());
         } else {
             budget.setFinalPrice(suggestedFinalPrice);
         }
-
-        budgetRepository.save(budget);
     }
 
 
@@ -163,7 +166,6 @@ public class BudgetImpl implements BudgetService {
 
         calculateTotals(budget);
 
-        budgetRepository.save(budget);
     }
 
     @Override
@@ -180,18 +182,19 @@ public class BudgetImpl implements BudgetService {
                 Ingredient ing = di.getIngredient();
                 double qtyPerDrink = di.getQuantity().doubleValue();
                 String unit = ing.getUnitMeasure().getCode();
-                double volume = ing.getVolume().doubleValue();
 
-                double totalBaseQty = convertToBase(qtyPerDrink, unit) * drinkQty;
+                double qtyBase = convertToBase(qtyPerDrink, unit);
+                double totalBaseQty = qtyBase * drinkQty;
 
                 BudgetAutoIngredient bi = merged.computeIfAbsent(
                         ing.getId(),
                         id -> {
                             BudgetAutoIngredient x = new BudgetAutoIngredient();
                             x.setIngredient(ing);
+                            x.setQuantity(BigDecimal.ZERO);
+                            x.setUnitsNeeded(0);
                             x.setUnitPrice(BigDecimal.ZERO);
                             x.setTotalPrice(BigDecimal.ZERO);
-                            x.setQuantity(BigDecimal.ZERO);
                             return x;
                         }
                 );
@@ -200,24 +203,25 @@ public class BudgetImpl implements BudgetService {
             }
         }
 
-        merged.values().forEach(bi -> {
+        for (BudgetAutoIngredient bi : merged.values()) {
             Ingredient ing = bi.getIngredient();
             String unit = ing.getUnitMeasure().getCode();
-            double volume = ing.getVolume().doubleValue();
-            double totalBase = bi.getQuantity().doubleValue();
+            double totalBaseNeeded = bi.getQuantity().doubleValue();
 
-            double volumeBase = convertToBase(volume, unit);
-            int unitsNeeded = (int) Math.ceil(totalBase / volumeBase);
+            double packageBase = convertToBase(ing.getVolume().doubleValue(), unit);
+            int unitsNeeded = (int) Math.ceil(totalBaseNeeded / packageBase);
             bi.setUnitsNeeded(unitsNeeded);
 
-            if ("L".equalsIgnoreCase(unit) || "KG".equalsIgnoreCase(unit)) {
-                bi.setQuantity(BigDecimal.valueOf(totalBase / 1000.0));
+            BigDecimal displayQuantity = BigDecimal.valueOf(totalBaseNeeded);
+            if ("l".equalsIgnoreCase(unit) || "kg".equalsIgnoreCase(unit)) {
+                displayQuantity = BigDecimal.valueOf(totalBaseNeeded / 1000.0);
             }
+            bi.setQuantity(displayQuantity);
 
             if (bi.getUnitPrice() != null) {
-                bi.setTotalPrice(BigDecimal.valueOf(unitsNeeded).multiply(bi.getUnitPrice()));
+                bi.setTotalPrice(bi.getUnitPrice().multiply(BigDecimal.valueOf(unitsNeeded)));
             }
-        });
+        }
 
         return merged.values().stream().toList();
     }
@@ -231,6 +235,7 @@ public class BudgetImpl implements BudgetService {
         };
     }
 
+
     public int calculateUnitsFromQuantity(double quantity, double volumePerUnit) {
         return (int) Math.ceil(quantity / volumePerUnit);
     }
@@ -242,8 +247,10 @@ public class BudgetImpl implements BudgetService {
     @Override
     public BudgetAutoIngredient getIngredientById(Long ingredientId, List<DrinkDto> drinks) {
         List<BudgetAutoIngredient> list = calculateIngredientsFromDrinks(drinks);
-        return list.stream().filter(bi -> bi.getIngredient().getId().equals(ingredientId))
-                .findFirst().orElse(null);
+        return list.stream()
+                .filter(bi -> bi.getIngredient().getId().equals(ingredientId))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -287,7 +294,6 @@ public class BudgetImpl implements BudgetService {
         }
 
         calculateTotals(budget);
-        budgetRepository.save(budget);
     }
 
 

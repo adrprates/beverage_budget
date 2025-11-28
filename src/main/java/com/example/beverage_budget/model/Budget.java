@@ -38,6 +38,15 @@ public class Budget {
     @Column(name = "total_cost", precision = 15, scale = 2)
     private BigDecimal totalCost = BigDecimal.ZERO;
 
+    @Column(name = "total_auto_ingredient_cost", precision = 15, scale = 2)
+    private BigDecimal totalAutoIngredientCost = BigDecimal.ZERO;
+
+    @Column(name = "total_manual_ingredient_cost", precision = 15, scale = 2)
+    private BigDecimal totalManualIngredientCost = BigDecimal.ZERO;
+
+    @Column(name = "total_resource_cost", precision = 15, scale = 2)
+    private BigDecimal totalResourceCost = BigDecimal.ZERO;
+
     @Column(name = "markup_percentage", precision = 5, scale = 2)
     private BigDecimal markupPercentage = BigDecimal.ZERO;
 

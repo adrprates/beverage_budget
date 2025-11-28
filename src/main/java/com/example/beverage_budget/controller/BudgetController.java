@@ -97,7 +97,7 @@ public class BudgetController {
                 bi.setIngredient(ing);
                 bi.setQuantity(qty);
                 bi.setUnitPrice(price != null ? price : BigDecimal.ZERO);
-                bi.setTotalPrice(bi.getQuantity().multiply(bi.getUnitPrice()));
+                bi.setTotalPrice(bi.getUnitPrice().multiply(BigDecimal.valueOf(unitsNeeded)));
                 bi.setUnitsNeeded(unitsNeeded);
 
                 budget.getAutoIngredients().add(bi);
@@ -138,25 +138,26 @@ public class BudgetController {
 
 
         budget.getResources().clear();
+
         if (resourceIds != null) {
             for (int i = 0; i < resourceIds.size(); i++) {
+
                 Resource r = resourceService.getById(resourceIds.get(i));
                 BigDecimal qty = resourceQuantities.get(i);
                 BigDecimal price = resourceUnitPrices.get(i);
+                BigDecimal total = resourceTotals.get(i);
 
                 BudgetResource br = new BudgetResource();
                 br.setBudget(budget);
                 br.setResource(r);
-                br.setQuantity(qty);
+                br.setQuantity(qty != null ? qty : BigDecimal.ZERO);
                 br.setUnitPrice(price != null ? price : BigDecimal.ZERO);
-                int units = qty != null ? qty.intValue() : 0;
-                br.setTotalPrice(resourceTotals.get(i));
-
-                br.setTotalPrice(br.getUnitPrice().multiply(BigDecimal.valueOf(units)));
+                br.setTotalPrice(total != null ? total : BigDecimal.ZERO);
 
                 budget.getResources().add(br);
             }
         }
+
 
         if (autoProportion) {
             budgetService.applyDrinkProportion(budget, budget.getPeopleCount());
@@ -167,6 +168,8 @@ public class BudgetController {
 
             budget.setFinalPrice(budget.getCustomFinalPrice());
         }
+
+        budgetService.calculateTotals(budget);
 
         budgetService.save(budget);
 
