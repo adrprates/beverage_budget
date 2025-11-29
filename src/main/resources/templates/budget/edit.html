@@ -280,69 +280,546 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    function formatBRL(value) {
-        return (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+/* =================== HELPERS =================== */
+function formatBRL(value) {
+    return (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
-    let selectedDrinks = [];
+function setCurrencyText(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerText = value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
 
-    document.querySelectorAll('.added-item').forEach(item => {
-        const qtyInput = item.querySelector('input[type="number"]');
-        const hiddenQty = item.querySelector('input[name="drinkQuantities"]');
-
-        qtyInput.addEventListener('input', () => {
-            hiddenQty.value = qtyInput.value;
-            updateTotals();
-        });
+function sumTableTotals(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return 0;
+    let total = 0;
+    table.querySelectorAll('.total').forEach(inp => {
+        total += parseFloat(inp.value || 0);
     });
-    function updateTotals() {
-        let autoSubtotal = 0;
-        document.querySelectorAll('#autoIngredientsTable tr').forEach(tr => {
-            const qty = parseFloat(tr.querySelector('.final-quantity').value) || 0;
-            const unitPrice = parseFloat(tr.querySelector('.unit-price').value) || 0;
-            const total = qty * unitPrice;
-            tr.querySelector('.total-display').textContent = formatBRL(total);
-            tr.querySelector('.total').value = total;
-            autoSubtotal += total;
+    return total;
+}
+
+function updateAllTotals() {
+    const autoTotal = sumTableTotals('autoIngredientsTable');
+    const manualTotal = sumTableTotals('manualIngredientsTable');
+    const resourceTotal = sumTableTotals('resourcesTable');
+
+    setCurrencyText('autoIngredientsSubtotal', autoTotal);
+    setCurrencyText('manualIngredientsSubtotal', manualTotal);
+    setCurrencyText('resourceSubtotal', resourceTotal);
+
+    // optional separate displays (if present)
+    setCurrencyText('autoIngredientsSubtotalDisplay', autoTotal);
+    setCurrencyText('manualIngredientsSubtotalDisplay', manualTotal);
+    setCurrencyText('resourceSubtotalDisplay', resourceTotal);
+
+    const ingredientsTotal = autoTotal + manualTotal;
+    const markupPercent = parseFloat(document.getElementById('markupPercentage')?.value || 0);
+    const markupValue = (ingredientsTotal + resourceTotal) * (markupPercent / 100);
+    setCurrencyText('markupValueDisplay', markupValue);
+
+    const totalCost = ingredientsTotal + resourceTotal + markupValue;
+    setCurrencyText('totalCostDisplay', totalCost);
+
+    const custom = parseFloat(document.getElementById('customFinalPrice')?.value || 0);
+    setCurrencyText('finalPriceDisplay', custom > 0 ? custom : totalCost);
+}
+
+/* =================== ROW CALCS =================== */
+function updateRowDisplay(row) {
+    // works both for auto/manual ingredients and resources
+    const qtyInput = row.querySelector('.final-quantity, .quantity');
+    const unitPriceInput = row.querySelector('.unit-price');
+    const unitsInput = row.querySelector('.units');
+
+    const qty = parseFloat(qtyInput?.value || 0);
+    const unitPrice = parseFloat(unitPriceInput?.value || 0);
+    const total = qty * unitPrice;
+
+    const totalDisplay = row.querySelector('.total-display');
+    if (totalDisplay) totalDisplay.textContent = formatBRL(total);
+
+    const totalHidden = row.querySelector('.total');
+    if (totalHidden) totalHidden.value = total;
+
+    updateAllTotals();
+}
+
+/* =================== SETUP EXISTING ROWS =================== */
+function setupExistingRows(tableId, isAuto = false) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    table.querySelectorAll('tr').forEach(row => {
+        // ignore header/footer rows (they usually don't have inputs)
+        const qtyInput = row.querySelector('.final-quantity, .quantity');
+        const unitsInput = row.querySelector('.units');
+        const unitPriceInput = row.querySelector('.unit-price');
+        const removeBtn = row.querySelector('.btn-remove');
+
+        // For auto ingredients we expect name="autoIngredientIds" hidden input in the row
+        // For manual ingredients we expect name="manualIngredientIds"
+        // But we treat both: if there's no id (row is header/footer) skip event binding
+        const isAutoRow = !!row.querySelector('[name="autoIngredientIds"]');
+        const isManualRow = !!row.querySelector('[name="manualIngredientIds"]');
+        const isResourceRow = !!row.querySelector('[name="resourceIds"]');
+
+        // attach event handlers according to row type
+        if (isAuto && isAutoRow) {
+            // Proportion logic for automatic ingredients: blur triggers backend calls
+            qtyInput?.addEventListener('blur', async () => {
+                const ingredientId = Number(row.querySelector('[name="autoIngredientIds"]').value);
+                const drinksPayload = [...document.getElementsByName('drinkIds')].map((el, idx) => ({
+                    drinkId: el.value,
+                    quantity: parseFloat(document.getElementsByName('drinkQuantities')[idx]?.value || 0)
+                }));
+
+                const payload = { ingredientId, quantity: parseFloat(qtyInput.value || 0), drinks: drinksPayload };
+                try {
+                    const res = await fetch('/drink/update-quantity', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (!data.error) {
+                        qtyInput.value = parseFloat(data.quantity).toFixed(2);
+                        if (unitsInput) {
+                            unitsInput.value = data.units;
+                            // keep hidden copy in sync if present
+                            const hiddenUnits = row.querySelector('.hidden-units');
+                            if (hiddenUnits) hiddenUnits.value = data.units;
+                        }
+                        updateRowDisplay(row);
+                    }
+                } catch (e) {
+                    console.error('Erro update-quantity:', e);
+                }
+            });
+
+            unitsInput?.addEventListener('blur', async () => {
+                const ingredientId = Number(row.querySelector('[name="autoIngredientIds"]').value);
+                const drinksPayload = [...document.getElementsByName('drinkIds')].map((el, idx) => ({
+                    drinkId: el.value,
+                    quantity: parseFloat(document.getElementsByName('drinkQuantities')[idx]?.value || 0)
+                }));
+                const payload = { ingredientId, units: parseInt(unitsInput.value || 0), drinks: drinksPayload };
+                try {
+                    const res = await fetch('/drink/update-units', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    if (!data.error) {
+                        qtyInput.value = parseFloat(data.quantity).toFixed(2);
+                        unitsInput.value = data.units;
+                        const hiddenFinalQty = row.querySelector('.hidden-final-quantity');
+                        if (hiddenFinalQty) hiddenFinalQty.value = data.quantity;
+                        updateRowDisplay(row);
+                    }
+                } catch (e) {
+                    console.error('Erro update-units:', e);
+                }
+            });
+        }
+
+        // Manual ingredients: same proportion behavior but calls different endpoint
+        if (!isAuto && isManualRow) {
+            const manualIngredientId = Number(row.querySelector('[name="manualIngredientIds"]')?.value);
+            // qty blur -> call /budget/manual-ingredient/calculate with quantity
+            qtyInput?.addEventListener('blur', async () => {
+                const newQty = parseFloat(qtyInput.value || 0);
+                if (isNaN(newQty)) return;
+                const payload = { ingredientId: manualIngredientId, quantity: newQty, unitPrice: parseFloat(row.querySelector('.unit-price')?.value || 0) };
+                try {
+                    const res = await fetch('/budget/manual-ingredient/calculate', {
+                        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    // update fields from response
+                    qtyInput.value = parseFloat(data.quantity).toFixed(2);
+                    const unitsEl = row.querySelector('.units');
+                    if (unitsEl) unitsEl.value = data.unitsNeeded;
+                    const totalHidden = row.querySelector('.total');
+                    if (totalHidden) totalHidden.value = parseFloat(data.totalPrice || 0);
+                    const totalDisplay = row.querySelector('.total-display');
+                    if (totalDisplay) totalDisplay.innerText = formatBRL(parseFloat(data.totalPrice || 0));
+                    // hidden sync
+                    const hiddenFinal = row.querySelector('.hidden-final-quantity');
+                    if (hiddenFinal) hiddenFinal.value = data.quantity;
+                    const hiddenUnits = row.querySelector('.hidden-units');
+                    if (hiddenUnits) hiddenUnits.value = data.unitsNeeded;
+                    updateAllTotals();
+                } catch (e) {
+                    console.error('Erro manual quantity calc:', e);
+                }
+            });
+
+            // units blur -> call /budget/manual-ingredient/calculate with units
+            unitsInput?.addEventListener('blur', async () => {
+                const newUnits = parseInt(unitsInput.value || 0);
+                if (isNaN(newUnits)) return;
+                const payload = { ingredientId: manualIngredientId, units: newUnits, unitPrice: parseFloat(row.querySelector('.unit-price')?.value || 0) };
+                try {
+                    const res = await fetch('/budget/manual-ingredient/calculate', {
+                        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    const qtyEl = row.querySelector('.final-quantity');
+                    if (qtyEl) qtyEl.value = parseFloat(data.quantity).toFixed(2);
+                    const totalHidden = row.querySelector('.total');
+                    if (totalHidden) totalHidden.value = parseFloat(data.totalPrice || 0);
+                    const totalDisplay = row.querySelector('.total-display');
+                    if (totalDisplay) totalDisplay.innerText = formatBRL(parseFloat(data.totalPrice || 0));
+                    const hiddenFinal = row.querySelector('.hidden-final-quantity');
+                    if (hiddenFinal) hiddenFinal.value = data.quantity;
+                    const hiddenUnits = row.querySelector('.hidden-units');
+                    if (hiddenUnits) hiddenUnits.value = data.unitsNeeded;
+                    updateAllTotals();
+                } catch (e) {
+                    console.error('Erro manual units calc:', e);
+                }
+            });
+        }
+
+        // unit price always recalculates row total locally
+        unitPriceInput?.addEventListener('input', () => updateRowDisplay(row));
+
+        // remove button
+        removeBtn?.addEventListener('click', () => {
+            // if inputs posted by server (existing items), removing should remove hidden inputs too (they're in the row)
+            row.remove();
+            // if this was a drink ingredient row, also ensure quantities hidden arrays align - refreshAutoIngredients will rebuild if necessary
+            updateAllTotals();
         });
-        document.getElementById('autoIngredientsSubtotal').textContent = formatBRL(autoSubtotal);
 
-        let manualSubtotal = 0;
-        document.querySelectorAll('#manualIngredientsTable tr').forEach(tr => {
-            const qty = parseFloat(tr.querySelector('.final-quantity').value) || 0;
-            const unitPrice = parseFloat(tr.querySelector('.unit-price').value) || 0;
-            const total = qty * unitPrice;
-            tr.querySelector('.total-display').textContent = formatBRL(total);
-            tr.querySelector('.total').value = total;
-            manualSubtotal += total;
+        // initial calc for row (so saved data shows totals)
+        updateRowDisplay(row);
+    });
+}
+
+/* =================== DRINKS (add/remove + refresh auto ingredients) =================== */
+function setupDrinkDomItem(item) {
+    const qtyInput = item.querySelector('input[type="number"]');
+    const hiddenQty = item.querySelector('input[name="drinkQuantities"]');
+    const removeBtn = item.querySelector('.btn-remove');
+
+    if (qtyInput) {
+        qtyInput.addEventListener('input', () => {
+            if (hiddenQty) hiddenQty.value = qtyInput.value;
+            // do not recalc proportions here automatically — restoreProportionBtn or blur will trigger proportion recalculation.
+            // But we want ingredient totals to reflect immediate manual qty change? We'll refresh auto ingredients so that server recalculation uses latest drinks.
+            // Keep it non-blocking: call refreshAutoIngredients but it's async
+            // We'll debounce to avoid flooding requests.
+            debounceRefreshAutoIngredients();
         });
-        document.getElementById('manualIngredientsSubtotal').textContent = formatBRL(manualSubtotal);
-
-        let resourceSubtotal = 0;
-        document.querySelectorAll('#resourcesTable tr').forEach(tr => {
-            const qty = parseFloat(tr.querySelector('.quantity').value) || 0;
-            const unitPrice = parseFloat(tr.querySelector('.unit-price').value) || 0;
-            const total = qty * unitPrice;
-            tr.querySelector('.total-display').textContent = formatBRL(total);
-            tr.querySelector('.total').value = total;
-            resourceSubtotal += total;
-        });
-        document.getElementById('resourceSubtotal').textContent = formatBRL(resourceSubtotal);
-
-        const markup = parseFloat(document.getElementById('markupPercentage').value) || 0;
-        const totalCost = autoSubtotal + manualSubtotal + resourceSubtotal;
-        const markupValue = totalCost * (markup / 100);
-        const finalTotal = totalCost + markupValue;
-
-        document.getElementById('totalCostDisplay').textContent = formatBRL(finalTotal);
-
-        const custom = parseFloat(document.getElementById('customFinalPrice').value);
-        document.getElementById('finalPriceDisplay').textContent = isNaN(custom) ? formatBRL(finalTotal) : formatBRL(custom);
     }
 
-    document.addEventListener('input', updateTotals);
-    updateTotals();
+    if (removeBtn) {
+        removeBtn.addEventListener('click', async () => {
+            item.remove();
+            await refreshAutoIngredients();
+        });
+    }
+}
+
+document.querySelectorAll('#addedDrinks .added-item').forEach(setupDrinkDomItem);
+
+document.getElementById('addDrinkBtn')?.addEventListener('click', async () => {
+    const select = document.getElementById('drinkSelect');
+    const id = select?.value;
+    const name = select?.selectedOptions?.[0]?.text || '';
+    const qtyVal = document.getElementById('drinkQuantity')?.value;
+    const qty = parseFloat(qtyVal);
+    if (!id || isNaN(qty) || qty <= 0) return;
+
+    const div = document.createElement('div');
+    div.className = "added-item d-flex align-items-center gap-1 mb-1";
+    div.innerHTML = `
+        <span style="white-space:nowrap;">${name}</span>
+        <input type="number" class="drink-quantity form-control form-control-sm" style="width:70px; margin:0 6px;" min="1" value="${qty}">
+        <span>un</span>
+        <button class="btn-remove btn btn-sm btn-danger" type="button" style="margin-left:auto;">Remover</button>
+        <input type="hidden" name="drinkIds" value="${id}">
+        <input type="hidden" name="drinkQuantities" value="${qty}">
+    `;
+    document.getElementById('addedDrinks')?.appendChild(div);
+    setupDrinkDomItem(div);
+
+    // clear selects
+    if (select) select.value = '';
+    const dq = document.getElementById('drinkQuantity'); if (dq) dq.value = '';
+
+    await refreshAutoIngredients();
+});
+
+/* small debounce so rapid typing doesn't flood server */
+let refreshTimeout = null;
+function debounceRefreshAutoIngredients() {
+    if (refreshTimeout) clearTimeout(refreshTimeout);
+    refreshTimeout = setTimeout(() => {
+        refreshAutoIngredients().catch(e => console.error(e));
+        refreshTimeout = null;
+    }, 300);
+}
+
+/* =================== REFRESH AUTOMATIC INGREDIENTS (rebuild list from server) =================== */
+async function refreshAutoIngredients() {
+    const ids = [...document.getElementsByName('drinkIds')].map(i => i.value);
+    const qtys = [...document.getElementsByName('drinkQuantities')].map(i => parseFloat(i.value || 0));
+    const tbody = document.getElementById('autoIngredientsTable');
+    if (!tbody) return;
+
+    // clear table body
+    tbody.innerHTML = '';
+
+    if (ids.length === 0) {
+        updateAllTotals();
+        return;
+    }
+
+    const drinksPayload = ids.map((id, idx) => ({ drinkId: id, quantity: qtys[idx] || 0 }));
+
+    try {
+        const res = await fetch('/drink/calculate-ingredients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(drinksPayload)
+        });
+        if (!res.ok) throw new Error('Erro ao calcular ingredientes');
+        const list = await res.json();
+
+        if (!list || list.length === 0) {
+            updateAllTotals();
+            return;
+        }
+
+        // build rows
+        list.forEach(i => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${i.ingredientName}</td>
+                <td>
+                    <div style="display:flex; align-items:center;">
+                        <input class="form-control form-control-sm final-quantity" type="number" min="0" step="0.01" value="${i.quantity}">
+                        <span style="margin-left:6px;">${i.unitMeasure}</span>
+                    </div>
+                    <input type="hidden" name="autoIngredientIds" value="${i.ingredientId}">
+                    <input type="hidden" name="autoIngredientQuantities" class="hidden-final-quantity" value="${i.quantity}">
+                </td>
+                <td>
+                    <input class="form-control form-control-sm units" type="number" min="0" step="1" value="${i.unitsNeeded}">
+                    <input type="hidden" name="autoIngredientUnits" class="hidden-units" value="${i.unitsNeeded}">
+                </td>
+                <td>
+                    <input class="form-control form-control-sm unit-price" type="number" min="0" step="0.01" value="${i.unitPrice || 0}">
+                    <input type="hidden" name="autoIngredientUnitPrices" class="hidden-unit-price" value="${i.unitPrice || 0}">
+                </td>
+                <td>
+                    <span class="total-display">R$ 0,00</span>
+                    <input class="total" type="hidden" value="0">
+                </td>
+                <td>
+                    <button class="btn-remove btn btn-sm btn-danger" type="button">Remover</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            // attach the same handlers as setupExistingRows would
+            const qtyInput = row.querySelector('.final-quantity');
+            const unitsInput = row.querySelector('.units');
+            const unitPriceInput = row.querySelector('.unit-price');
+            const removeBtn = row.querySelector('.btn-remove');
+
+            // qty blur -> /drink/update-quantity
+            qtyInput?.addEventListener('blur', async () => {
+                const payload = {
+                    ingredientId: i.ingredientId,
+                    quantity: parseFloat(qtyInput.value || 0),
+                    drinks: drinksPayload
+                };
+                try {
+                    const r = await fetch('/drink/update-quantity', {
+                        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+                    });
+                    const data = await r.json();
+                    if (!data.error) {
+                        qtyInput.value = parseFloat(data.quantity).toFixed(2);
+                        if (unitsInput) unitsInput.value = data.units;
+                        const hiddenUnits = row.querySelector('.hidden-units'); if (hiddenUnits) hiddenUnits.value = data.units;
+                        updateRowDisplay(row);
+                    }
+                } catch (e) { console.error(e); }
+            });
+
+            // units blur -> /drink/update-units
+            unitsInput?.addEventListener('blur', async () => {
+                const payload = {
+                    ingredientId: i.ingredientId,
+                    units: parseInt(unitsInput.value || 0),
+                    drinks: drinksPayload
+                };
+                try {
+                    const r = await fetch('/drink/update-units', {
+                        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+                    });
+                    const data = await r.json();
+                    if (!data.error) {
+                        qtyInput.value = parseFloat(data.quantity).toFixed(2);
+                        unitsInput.value = data.units;
+                        const hiddenFinal = row.querySelector('.hidden-final-quantity'); if (hiddenFinal) hiddenFinal.value = data.quantity;
+                        updateRowDisplay(row);
+                    }
+                } catch (e) { console.error(e); }
+            });
+
+            unitPriceInput?.addEventListener('input', () => updateRowDisplay(row));
+
+            removeBtn?.addEventListener('click', () => {
+                row.remove();
+                updateAllTotals();
+            });
+
+            // initial calc
+            updateRowDisplay(row);
+        });
+    } catch (e) {
+        console.error('Erro refreshAutoIngredients:', e);
+    }
+
+    updateAllTotals();
+}
+
+/* =================== MANUAL INGREDIENT: ADD (com proporção) =================== */
+document.getElementById('addManualIngredientBtn')?.addEventListener('click', async () => {
+    const ingredientId = Number(document.getElementById('manualIngredientSelect')?.value);
+    const quantity = parseFloat(document.getElementById('manualIngredientQuantity')?.value || 0);
+    const unitPrice = parseFloat(document.getElementById('manualIngredientUnitPrice')?.value || 0);
+    if (!ingredientId || isNaN(quantity)) return;
+
+    const payload = { ingredientId, quantity, unitPrice };
+    try {
+        const res = await fetch('/budget/manual-ingredient/calculate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Erro ao calcular ingrediente manual');
+        const data = await res.json();
+
+        const tbody = document.getElementById('manualIngredientsTable');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${data.ingredientName}</td>
+            <td>
+                <div style="display:flex; align-items:center;">
+                    <input class="form-control form-control-sm final-quantity" type="number" min="0" step="0.01" value="${data.quantity}">
+                    <span style="margin-left:6px;">${data.unitMeasure}</span>
+                </div>
+                <input type="hidden" name="manualIngredientIds" value="${data.ingredientId}">
+                <input type="hidden" name="manualIngredientQuantities" class="hidden-final-quantity" value="${data.quantity}">
+            </td>
+            <td>
+                <input class="form-control form-control-sm units" type="number" min="0" step="1" value="${data.unitsNeeded}">
+                <input type="hidden" name="manualIngredientUnits" class="hidden-units" value="${data.unitsNeeded}">
+            </td>
+            <td>
+                <input class="form-control form-control-sm unit-price" type="number" min="0" step="0.01" value="${data.unitPrice || 0}">
+                <input type="hidden" name="manualIngredientUnitPrices" class="hidden-unit-price" value="${data.unitPrice || 0}">
+            </td>
+            <td>
+                <span class="total-display">${formatBRL(data.totalPrice)}</span>
+                <input class="total" type="hidden" value="${data.totalPrice}">
+                <input type="hidden" name="manualIngredientTotals" class="hidden-total-price" value="${data.totalPrice}">
+            </td>
+            <td>
+                <button class="btn-remove btn btn-sm btn-danger" type="button">Remover</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+
+        // attach handlers for the new manual row (same behavior as existing rows)
+        setupExistingRows('manualIngredientsTable', false);
+
+        // clear inputs
+        document.getElementById('manualIngredientSelect').value = '';
+        document.getElementById('manualIngredientQuantity').value = '';
+        document.getElementById('manualIngredientUnitPrice').value = '';
+    } catch (e) {
+        console.error('Erro add manual ingredient:', e);
+    }
+});
+
+/* =================== RESOURCES (unchanged behavior but wired) =================== */
+document.getElementById('addResourceBtn')?.addEventListener('click', () => {
+    const resourceId = document.getElementById('resourceSelect')?.value;
+    const quantity = parseFloat(document.getElementById('resourceQuantity')?.value || 0);
+    const unitPrice = parseFloat(document.getElementById('resourceUnitPrice')?.value || 0);
+    if (!resourceId || isNaN(quantity)) return;
+
+    const resourceName = document.getElementById('resourceSelect').selectedOptions[0]?.text || 'Recurso';
+    const total = quantity * unitPrice;
+    const tbody = document.getElementById('resourcesTable');
+    const row = document.createElement('tr');
+
+    row.innerHTML = `
+        <td>${resourceName}</td>
+        <td>
+            <input class="form-control form-control-sm quantity" type="number" min="0" step="0.01" value="${quantity}">
+            <input type="hidden" name="resourceIds" value="${resourceId}">
+            <input type="hidden" name="resourceQuantities" class="hidden-quantity" value="${quantity}">
+        </td>
+        <td>
+            <input class="form-control form-control-sm unit-price" type="number" min="0" step="0.01" value="${unitPrice}">
+            <input type="hidden" name="resourceUnitPrices" class="hidden-unit-price" value="${unitPrice}">
+        </td>
+        <td>
+            <span class="total-display">${formatBRL(total)}</span>
+            <input class="total" type="hidden" value="${total}">
+            <input type="hidden" name="resourceTotals" class="hidden-total-price" value="${total}">
+        </td>
+        <td>
+            <button class="btn-remove btn btn-sm btn-danger" type="button">Remover</button>
+        </td>
+    `;
+    tbody.appendChild(row);
+
+    // wire the new row
+    setupExistingRows('resourcesTable', false);
+
+    // clear inputs
+    document.getElementById('resourceSelect').value = '';
+    document.getElementById('resourceQuantity').value = '';
+    document.getElementById('resourceUnitPrice').value = '';
+});
+
+/* =================== RESTORE PROPORTION BUTTON =================== */
+document.getElementById('restoreProportionBtn')?.addEventListener('click', () => {
+    // force re-calc based on current drinks
+    refreshAutoIngredients();
+});
+
+/* =================== FORM SUBMIT: blur all inputs to flush values =================== */
+document.querySelector('form')?.addEventListener('submit', () => {
+    document.querySelectorAll('input').forEach(i => i.blur());
+});
+
+/* =================== MUTATION OBSERVER for dynamic updates =================== */
+const observer = new MutationObserver(updateAllTotals);
+['autoIngredientsTable','manualIngredientsTable','resourcesTable'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el, { childList: true, subtree: true });
+});
+
+/* =================== INITIALIZE =================== */
+setupExistingRows('autoIngredientsTable', true);
+setupExistingRows('manualIngredientsTable', false);
+setupExistingRows('resourcesTable', false);
+
+updateAllTotals();
 </script>
+
 
 </body>
 </html>
