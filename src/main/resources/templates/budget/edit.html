@@ -1,250 +1,348 @@
 <!DOCTYPE html>
-<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prates Bar - Editar Orçamento</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <link rel="stylesheet" th:href="@{/drink/save.css}">
+    <meta charset="UTF-8">
+    <title>Editar Orçamento</title>
+    <link rel="stylesheet" th:href="@{/budget/save.css}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark custom-navbar fixed-top">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}">
-      <i class="bi bi-stars me-2"></i> Prates Bar
-    </a>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" th:href="@{/ingredient}">Ingredientes</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/drink}">Drinks</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/resource}">Recursos</a></li>
-        <li class="nav-item"><a class="nav-link active" th:href="@{/budget}">Orçamentos</a></li>
-      </ul>
+<div class="container py-5">
+    <div class="card">
+        <h2 class="card-title mb-4 text-center">Editar Orçamento</h2>
+
+        <form th:action="@{/budget/save}" method="post">
+            <input type="hidden" th:name="id" th:value="${budget.id}">
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Nome do orçamento</label>
+                    <input type="text" id="name" name="name" class="form-control" th:value="${budget.name}" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="peopleCount" class="form-label">Qtd. de pessoas</label>
+                    <input type="number" id="peopleCount" name="peopleCount" class="form-control" th:value="${budget.peopleCount}" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="markupPercentage" class="form-label">Markup (%)</label>
+                    <input type="number" id="markupPercentage" name="markupPercentage" step="0.01" class="form-control" th:value="${budget.markupPercentage}">
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label for="eventDate" class="form-label">Data do evento</label>
+                    <input type="date" id="eventDate" name="eventDate" class="form-control" th:value="${budget.eventDate}">
+                </div>
+                <div class="col-md-6">
+                    <label for="eventHour" class="form-label">Hora do evento</label>
+                    <input type="time" id="eventHour" name="eventHour" class="form-control" th:value="${budget.eventHour}">
+                </div>
+            </div>
+
+            <hr>
+
+            <h5 class="mb-3">Drinks</h5>
+            <div class="row mb-3 align-items-center">
+                <div class="col-md-6">
+                    <select id="drinkSelect" class="form-select">
+                        <option value="">Selecione um drink</option>
+                        <option th:each="d : ${allDrinks}" th:value="${d.id}" th:text="${d.name}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" id="drinkQuantity" placeholder="Qtd." class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" id="addDrinkBtn" class="btn btn-primary w-100">Adicionar</button>
+                </div>
+            </div>
+
+           <div id="addedDrinks">
+                <div th:each="d : ${selectedDrinks}" class="added-item" 
+                    style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+
+                    <span th:text="${d.drinkName}" style="white-space: nowrap;"></span>
+                    <input type="number" class="drink-quantity" 
+                          style="width: 100px; padding: 2px; font-size: 0.9rem;" 
+                          min="1" th:value="${d.quantity}">
+                    <span style="font-size: 0.9rem;">un</span>
+
+                    <button class="btn-remove btn btn-sm btn-danger" type="button" 
+                            style="margin-left: auto;">Remover</button>
+
+                    <input type="hidden" name="drinkIds" th:value="${d.drinkId}">
+                    <input type="hidden" name="drinkQuantities" th:value="${d.quantity}">
+                </div>
+            </div>
+
+            <hr>
+
+            <h5 class="mb-3">Ingredientes dos Drinks Selecionados</h5>
+            <button type="button" id="restoreProportionBtn" class="btn btn-secondary btn-sm mb-2">Restaurar Proporção</button>
+
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Ingrediente</th>
+                        <th>Quantidade</th>
+                        <th>Unidade(s)</th>
+                        <th>Valor Unit.</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="autoIngredientsTable">
+                    <tr th:each="ai : ${autoIngredients}">
+                        <td th:text="${ai.ingredientName}"></td>
+                        <td>
+                            <div style="display: flex; align-items: center;">
+                                <input class="form-control form-control-sm final-quantity" type="number" min="0" step="0.01" th:value="${ai.quantity}">
+                                <span style="margin-left: 4px;" th:text="${ai.unitMeasure}"></span>
+                            </div>
+                            <input type="hidden" name="autoIngredientIds" th:value="${ai.ingredientId}">
+                        </td>
+                        <td>
+                            <input class="form-control form-control-sm units" type="number" min="0" step="1" th:value="${ai.unitsNeeded}">
+                            <input type="hidden" name="autoIngredientUnits" th:value="${ai.unitsNeeded}">
+                        </td>
+                        <td>
+                            <input class="form-control form-control-sm unit-price" type="number" min="0" step="0.01" th:value="${ai.unitPrice}">
+                            <input type="hidden" name="autoIngredientUnitPrices" th:value="${ai.unitPrice}">
+                        </td>
+                        <td>
+                            <span class="total-display" data-value="${ai.totalPrice}">0,00</span>
+                            <input type="hidden" class="total" th:value="${ai.totalPrice}">
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="4" class="text-end">Subtotal Ingredientes de Drinks</th>
+                        <th id="autoIngredientsSubtotal">0,00</th>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <hr>
+
+            <h5 class="mb-3">Ingredientes Manuais</h5>
+            <div class="row mb-3 align-items-center">
+                <div class="col-md-4">
+                    <select id="manualIngredientSelect" class="form-select">
+                        <option value="">Selecione o ingrediente</option>
+                        <option th:each="i : ${allIngredients}" th:value="${i.id}" th:text="${i.name}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" id="manualIngredientQuantity" placeholder="Qtd." class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <input type="number" id="manualIngredientUnitPrice" placeholder="Preço Unit." class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" id="addManualIngredientBtn" class="btn btn-primary w-100">Adicionar</button>
+                </div>
+            </div>
+
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Ingrediente</th>
+                        <th>Quantidade</th>
+                        <th>Unidades</th>
+                        <th>Valor Unit.</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="manualIngredientsTable">
+                    <tr th:each="mi : ${manualIngredients}">
+                        <td th:text="${mi.ingredientName}"></td>
+                        <td>
+                            <div style="display: flex; align-items: center;">
+                                <input class="form-control form-control-sm final-quantity" type="number" min="0" step="0.01" th:value="${mi.quantity}">
+                                <span style="margin-left: 4px;" th:text="${mi.unitMeasure}"></span>
+                            </div>
+                            <input type="hidden" name="manualIngredientIds" th:value="${mi.ingredientId}">
+                        </td>
+                        <td>
+                            <input class="form-control form-control-sm units" type="number" min="0" step="1" th:value="${mi.unitsNeeded}">
+                            <input type="hidden" name="manualIngredientUnits" th:value="${mi.unitsNeeded}">
+                        </td>
+                        <td>
+                            <input class="form-control form-control-sm unit-price" type="number" min="0" step="0.01" th:value="${mi.unitPrice}">
+                            <input type="hidden" name="manualIngredientUnitPrices" th:value="${mi.unitPrice}">
+                        </td>
+                        <td>
+                            <span class="total-display" data-value="${mi.totalPrice}">0,00</span>
+                            <input type="hidden" class="total" th:value="${mi.totalPrice}">
+                        </td>
+                        <td>
+                            <button class="btn-remove btn btn-sm btn-danger" type="button">Remover</button>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="4" class="text-end">Subtotal Ingredientes Manuais</th>
+                        <th id="manualIngredientsSubtotal">0,00</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <hr>
+
+            <h5 class="mb-3">Recursos</h5>
+            <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Recurso</label>
+                    <select id="resourceSelect" class="form-select">
+                        <option value="">Selecione um recurso</option>
+                        <option th:each="r : ${allResources}" th:value="${r.id}" th:text="${r.name}"></option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Quantidade</label>
+                    <input id="resourceQuantity" type="number" min="0" step="0.01" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Valor Unitário (R$)</label>
+                    <input id="resourceUnitPrice" type="number" min="0" step="0.01" class="form-control">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button id="addResourceBtn" type="button" class="btn btn-primary w-100">Adicionar</button>
+                </div>
+            </div>
+
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Recurso</th>
+                        <th>Quantidade</th>
+                        <th>Valor Unit.</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="resourcesTable">
+                    <tr th:each="r : ${resources}">
+                        <td th:text="${r.resourceName}"></td>
+                        <td>
+                            <input class="form-control form-control-sm quantity" type="number" min="0" step="0.01" th:value="${r.quantity}">
+                            <input type="hidden" name="resourceIds" th:value="${r.resourceId}">
+                        </td>
+                        <td>
+                            <input class="form-control form-control-sm unit-price" type="number" min="0" step="0.01" th:value="${r.unitPrice}">
+                            <input type="hidden" name="resourceUnitPrices" th:value="${r.unitPrice}">
+                        </td>
+                        <td>
+                            <span class="total-display" data-value="${r.totalPrice}">0,00</span>
+                            <input type="hidden" class="total" th:value="${r.totalPrice}">
+                        </td>
+                        <td>
+                            <button class="btn-remove btn btn-sm btn-danger" type="button">Remover</button>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" class="text-end">Subtotal Recursos</th>
+                        <th id="resourceSubtotal">0,00</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <hr>
+
+            <div class="text-end mb-4">
+                <h4>Total Custo: <span id="totalCostDisplay">0,00</span></h4>
+                <h4 class="text-success">Preço Final: <span id="finalPriceDisplay">0,00</span></h4>
+                <div class="mt-2">
+                    <label for="customFinalPrice" class="form-label">Valor personalizado (opcional)</label>
+                    <input type="number" id="customFinalPrice" name="customFinalPrice" step="0.01"
+                           class="form-control w-auto d-inline-block text-end"
+                           th:value="${budget.customFinalPrice != null ? budget.customFinalPrice : ''}"
+                           placeholder="R$">
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary px-5">Salvar Orçamento</button>
+                <a th:href="@{/budget/list}" class="btn btn-secondary px-5">Cancelar</a>
+            </div>
+        </form>
     </div>
-  </div>
-</nav>
-
-<div class="container dashboard-container">
-  <h1 class="text-center mb-4">
-    <span style="color:#ffffff;">Editar</span> <span class="highlight">Orçamento</span>
-  </h1>
-
-  <div class="card dashboard-card mb-4">
-    <div class="card-body">
-      <form th:action="@{/budget/update}" th:object="${budget}" method="post">
-
-        <input type="hidden" th:field="*{id}">
-
-        <h5 class="card-title mb-3">Informações do Evento</h5>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Nome do Orçamento</label>
-            <input type="text" th:field="*{name}" class="form-control" required>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Qtd. de Pessoas</label>
-            <input type="number" th:field="*{peopleCount}" class="form-control" min="1" required>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Status</label>
-            <select th:field="*{status}" class="form-select">
-              <option th:each="s : ${T(com.example.beverage_budget.enums.BudgetStatus).values()}" 
-                      th:value="${s}" th:text="${s}"></option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Data do Evento</label>
-            <input type="date" th:field="*{eventDate}" class="form-control">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Hora do Evento</label>
-            <input type="time" th:field="*{eventHour}" class="form-control">
-          </div>
-        </div>
-
-        <hr>
-        <h5 class="card-title mb-3">Drinks</h5>
-
-        <div class="mb-3">
-          <div class="row align-items-center">
-            <div class="col-md-6">
-              <select id="drinkSelect" class="form-select">
-                <option value="">Adicionar novo drink</option>
-                <option th:each="d : ${allDrinks}" th:value="${d.id}" th:text="${d.name}"></option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <input type="number" id="drinkQuantity" class="form-control" placeholder="Qtd.">
-            </div>
-            <div class="col-md-3 mt-4">
-              <button type="button" id="addDrinkBtn" class="btn btn-outline-light btn-card w-100">Adicionar</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="addedDrinks" class="added-ingredients mt-3">
-          <div th:each="bd : *{budgetDrinks}">
-            <div class="added-ingredient-item">
-              <span th:text="${bd.drink.name + ' - ' + bd.quantity + ' un'}"></span>
-              <button type="button" class="btn-remove" th:onclick="'removeDrink(' + ${bd.id} + ')'">Remover</button>
-              <input type="hidden" name="existingDrinkIds" th:value="${bd.drink.id}">
-              <input type="hidden" name="existingDrinkQuantities" th:value="${bd.quantity}">
-            </div>
-          </div>
-        </div>
-
-        <hr>
-        <h5 class="card-title mb-3">Ingredientes Manuais</h5>
-        <div class="row mb-3 align-items-center">
-          <div class="col-md-4">
-            <select id="ingredientSelect" class="form-select">
-              <option value="">Adicionar ingrediente</option>
-              <option th:each="i : ${allIngredients}" th:value="${i.id}" th:text="${i.name}"></option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <input type="number" id="ingredientQuantity" placeholder="Qtd." class="form-control">
-          </div>
-          <div class="col-md-3">
-            <input type="number" id="ingredientUnitPrice" placeholder="Preço unitário" class="form-control">
-          </div>
-          <div class="col-md-2">
-            <button type="button" id="addIngredientBtn" class="btn btn-outline-light btn-card w-100">Adicionar</button>
-          </div>
-        </div>
-
-        <div id="addedIngredients" class="added-ingredients">
-          <div th:each="bi : *{budgetAutoIngredients}">
-            <div class="added-ingredient-item">
-              <span th:text="${bi.ingredient.name + ' - ' + bi.quantity + ' un - R$' + bi.unitPrice}"></span>
-              <button type="button" class="btn-remove" th:onclick="'removeIngredient(' + ${bi.id} + ')'">Remover</button>
-              <input type="hidden" name="existingIngredientIds" th:value="${bi.ingredient.id}">
-              <input type="hidden" name="existingIngredientQuantities" th:value="${bi.quantity}">
-              <input type="hidden" name="existingIngredientUnitPrices" th:value="${bi.unitPrice}">
-            </div>
-          </div>
-        </div>
-
-        <hr>
-        <h5 class="card-title mb-3">Recursos</h5>
-        <div class="row mb-3 align-items-center">
-          <div class="col-md-4">
-            <select id="resourceSelect" class="form-select">
-              <option value="">Adicionar recurso</option>
-              <option th:each="r : ${allResources}" th:value="${r.id}" th:text="${r.name}"></option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <input type="number" id="resourceQuantity" placeholder="Qtd." class="form-control">
-          </div>
-          <div class="col-md-3">
-            <input type="number" id="resourceUnitPrice" placeholder="Preço unitário" class="form-control">
-          </div>
-          <div class="col-md-2">
-            <button type="button" id="addResourceBtn" class="btn btn-outline-light btn-card w-100">Adicionar</button>
-          </div>
-        </div>
-
-        <div id="addedResources" class="added-ingredients">
-          <div th:each="br : *{budgetResources}">
-            <div class="added-ingredient-item">
-              <span th:text="${br.resource.name + ' - ' + br.quantity + ' un - R$' + br.unitPrice}"></span>
-              <button type="button" class="btn-remove" th:onclick="'removeResource(' + ${br.id} + ')'">Remover</button>
-              <input type="hidden" name="existingResourceIds" th:value="${br.resource.id}">
-              <input type="hidden" name="existingResourceQuantities" th:value="${br.quantity}">
-              <input type="hidden" name="existingResourceUnitPrices" th:value="${br.unitPrice}">
-            </div>
-          </div>
-        </div>
-
-        <hr>
-        <div class="row mb-3">
-          <div class="col-md-4">
-            <label class="form-label">Markup (%)</label>
-            <input type="number" step="0.01" th:field="*{markupPercentage}" class="form-control">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Preço Final Customizado</label>
-            <input type="number" step="0.01" th:field="*{customFinalPrice}" class="form-control">
-          </div>
-          <div class="col-md-4">
-            <div class="form-check mt-4">
-              <input class="form-check-input" type="checkbox" name="autoProportion" id="autoProportion">
-              <label class="form-check-label" for="autoProportion">Aplicar proporção automática</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="text-center mt-4">
-          <button type="submit" class="btn btn-outline-light btn-card">Salvar Alterações</button>
-          <a th:href="@{/budget}" class="btn btn-secondary ms-2">Cancelar</a>
-        </div>
-
-      </form>
-    </div>
-  </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-function addItem(listId, hiddenNames, displayText) {
-  const container = document.getElementById(listId);
-  const div = document.createElement('div');
-  div.className = 'added-ingredient-item';
-  div.innerHTML = `${displayText} <button type="button" class="btn-remove">Remover</button>`;
-  hiddenNames.forEach(h => {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = h.name;
-    input.value = h.value;
-    div.appendChild(input);
-  });
-  container.appendChild(div);
-  div.querySelector('.btn-remove').addEventListener('click', () => div.remove());
-}
+    function formatBRL(value) {
+        return (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 
-document.getElementById('addDrinkBtn').addEventListener('click', () => {
-  const drinkId = document.getElementById('drinkSelect').value;
-  const drinkText = document.getElementById('drinkSelect').selectedOptions[0].text;
-  const qty = document.getElementById('drinkQuantity').value;
-  if (!drinkId || !qty) return;
-  addItem('addedDrinks', [
-    { name: 'drinkIds', value: drinkId },
-    { name: 'drinkQuantities', value: qty }
-  ], `${drinkText} - ${qty} un`);
-});
+    let selectedDrinks = [];
 
-document.getElementById('addIngredientBtn').addEventListener('click', () => {
-  const id = document.getElementById('ingredientSelect').value;
-  const name = document.getElementById('ingredientSelect').selectedOptions[0].text;
-  const qty = document.getElementById('ingredientQuantity').value;
-  const price = document.getElementById('ingredientUnitPrice').value;
-  if (!id || !qty) return;
-  addItem('addedIngredients', [
-    { name: 'ingredientIds', value: id },
-    { name: 'ingredientQuantities', value: qty },
-    { name: 'ingredientUnitPrices', value: price }
-  ], `${name} - ${qty} un - R$${price}`);
-});
+    document.querySelectorAll('.added-item').forEach(item => {
+        const qtyInput = item.querySelector('input[type="number"]');
+        const hiddenQty = item.querySelector('input[name="drinkQuantities"]');
 
-document.getElementById('addResourceBtn').addEventListener('click', () => {
-  const id = document.getElementById('resourceSelect').value;
-  const name = document.getElementById('resourceSelect').selectedOptions[0].text;
-  const qty = document.getElementById('resourceQuantity').value;
-  const price = document.getElementById('resourceUnitPrice').value;
-  if (!id || !qty) return;
-  addItem('addedResources', [
-    { name: 'resourceIds', value: id },
-    { name: 'resourceQuantities', value: qty },
-    { name: 'resourceUnitPrices', value: price }
-  ], `${name} - ${qty} un - R$${price}`);
-});
+        qtyInput.addEventListener('input', () => {
+            hiddenQty.value = qtyInput.value;
+            updateTotals();
+        });
+    });
+    function updateTotals() {
+        let autoSubtotal = 0;
+        document.querySelectorAll('#autoIngredientsTable tr').forEach(tr => {
+            const qty = parseFloat(tr.querySelector('.final-quantity').value) || 0;
+            const unitPrice = parseFloat(tr.querySelector('.unit-price').value) || 0;
+            const total = qty * unitPrice;
+            tr.querySelector('.total-display').textContent = formatBRL(total);
+            tr.querySelector('.total').value = total;
+            autoSubtotal += total;
+        });
+        document.getElementById('autoIngredientsSubtotal').textContent = formatBRL(autoSubtotal);
+
+        let manualSubtotal = 0;
+        document.querySelectorAll('#manualIngredientsTable tr').forEach(tr => {
+            const qty = parseFloat(tr.querySelector('.final-quantity').value) || 0;
+            const unitPrice = parseFloat(tr.querySelector('.unit-price').value) || 0;
+            const total = qty * unitPrice;
+            tr.querySelector('.total-display').textContent = formatBRL(total);
+            tr.querySelector('.total').value = total;
+            manualSubtotal += total;
+        });
+        document.getElementById('manualIngredientsSubtotal').textContent = formatBRL(manualSubtotal);
+
+        let resourceSubtotal = 0;
+        document.querySelectorAll('#resourcesTable tr').forEach(tr => {
+            const qty = parseFloat(tr.querySelector('.quantity').value) || 0;
+            const unitPrice = parseFloat(tr.querySelector('.unit-price').value) || 0;
+            const total = qty * unitPrice;
+            tr.querySelector('.total-display').textContent = formatBRL(total);
+            tr.querySelector('.total').value = total;
+            resourceSubtotal += total;
+        });
+        document.getElementById('resourceSubtotal').textContent = formatBRL(resourceSubtotal);
+
+        const markup = parseFloat(document.getElementById('markupPercentage').value) || 0;
+        const totalCost = autoSubtotal + manualSubtotal + resourceSubtotal;
+        const markupValue = totalCost * (markup / 100);
+        const finalTotal = totalCost + markupValue;
+
+        document.getElementById('totalCostDisplay').textContent = formatBRL(finalTotal);
+
+        const custom = parseFloat(document.getElementById('customFinalPrice').value);
+        document.getElementById('finalPriceDisplay').textContent = isNaN(custom) ? formatBRL(finalTotal) : formatBRL(custom);
+    }
+
+    document.addEventListener('input', updateTotals);
+    updateTotals();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

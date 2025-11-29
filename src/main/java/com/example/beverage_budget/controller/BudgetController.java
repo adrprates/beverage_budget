@@ -1,7 +1,6 @@
 package com.example.beverage_budget.controller;
 
-import com.example.beverage_budget.dto.ManualIngredientDto;
-import com.example.beverage_budget.dto.ManualIngredientResponseDto;
+import com.example.beverage_budget.dto.*;
 import com.example.beverage_budget.model.*;
 import com.example.beverage_budget.service.*;
 import jakarta.validation.Valid;
@@ -176,138 +175,66 @@ public class BudgetController {
         return "redirect:/budget";
     }
 
-
     @GetMapping("/edit/{id}")
-    public String edit(@PathVariable Long id, Model model) {
+    public String editBudget(@PathVariable Long id, Model model) {
         Budget budget = budgetService.getById(id);
         model.addAttribute("budget", budget);
-        prepareForm(model);
+
+        model.addAttribute("allDrinks", drinkService.getAll());
+        model.addAttribute("allIngredients", ingredientService.getAll());
+        model.addAttribute("allResources", resourceService.getAll());
+
+        List<BudgetDrinkViewDto> selectedDrinks = budget.getDrinks().stream()
+                .map(d -> {
+                    BudgetDrinkViewDto dto = new BudgetDrinkViewDto();
+                    dto.setDrinkId(d.getDrink().getId());
+                    dto.setDrinkName(d.getDrink().getName());
+                    dto.setQuantity(d.getQuantity());
+                    return dto;
+                }).toList();
+        model.addAttribute("selectedDrinks", selectedDrinks);
+
+        List<BudgetAutoIngredientViewDto> autoIngredients = budget.getAutoIngredients().stream()
+                .map(ai -> {
+                    BudgetAutoIngredientViewDto dto = new BudgetAutoIngredientViewDto();
+                    dto.setIngredientId(ai.getIngredient().getId());
+                    dto.setIngredientName(ai.getIngredient().getName());
+                    dto.setUnitMeasure(ai.getIngredient().getUnitMeasure().getCode());
+                    dto.setQuantity(ai.getQuantity());
+                    dto.setUnitsNeeded(ai.getUnitsNeeded());
+                    dto.setUnitPrice(ai.getUnitPrice());
+                    dto.setTotalPrice(ai.getTotalPrice());
+                    return dto;
+                }).toList();
+        model.addAttribute("autoIngredients", autoIngredients);
+
+        List<BudgetManualIngredientViewDto> manualIngredients = budget.getManualIngredients().stream()
+                .map(mi -> {
+                    BudgetManualIngredientViewDto dto = new BudgetManualIngredientViewDto();
+                    dto.setIngredientId(mi.getIngredient().getId());
+                    dto.setIngredientName(mi.getIngredient().getName());
+                    dto.setUnitMeasure(mi.getIngredient().getUnitMeasure().getCode());
+                    dto.setQuantity(mi.getQuantity());
+                    dto.setUnitsNeeded(mi.getUnitsNeeded());
+                    dto.setUnitPrice(mi.getUnitPrice());
+                    dto.setTotalPrice(mi.getTotalPrice());
+                    return dto;
+                }).toList();
+        model.addAttribute("manualIngredients", manualIngredients);
+
+        List<BudgetResourceViewDto> resources = budget.getResources().stream()
+                .map(r -> {
+                    BudgetResourceViewDto dto = new BudgetResourceViewDto();
+                    dto.setResourceId(r.getResource().getId());
+                    dto.setResourceName(r.getResource().getName());
+                    dto.setQuantity(r.getQuantity());
+                    dto.setUnitPrice(r.getUnitPrice());
+                    dto.setTotalPrice(r.getTotalPrice());
+                    return dto;
+                }).toList();
+        model.addAttribute("resources", resources);
+
         return "budget/edit";
-    }
-
-    @PostMapping("/update")
-    @Transactional
-    public String update(
-            @ModelAttribute @Valid Budget budget,
-            BindingResult bindingResult,
-            @RequestParam(required = false) List<Long> drinkIds,
-            @RequestParam(required = false) List<BigDecimal> drinkQuantities,
-
-            @RequestParam(required = false) List<Long> autoIngredientIds,
-            @RequestParam(required = false) List<BigDecimal> autoIngredientQuantities,
-            @RequestParam(required = false) List<BigDecimal> autoIngredientUnitPrices,
-            @RequestParam(required = false) List<Integer> autoIngredientUnits,
-
-            @RequestParam(required = false) List<Long> manualIngredientIds,
-            @RequestParam(required = false) List<BigDecimal> manualIngredientQuantities,
-            @RequestParam(required = false) List<BigDecimal> manualIngredientUnitPrices,
-            @RequestParam(required = false) List<Integer> manualIngredientUnits,
-
-            @RequestParam(required = false) List<Long> resourceIds,
-            @RequestParam(required = false) List<BigDecimal> resourceQuantities,
-            @RequestParam(required = false) List<BigDecimal> resourceUnitPrices,
-            @RequestParam(required = false) List<BigDecimal> resourceTotals,
-
-            @RequestParam(defaultValue = "false") boolean autoProportion,
-            Model model
-    ) {
-
-        if (bindingResult.hasErrors()) {
-            prepareForm(model);
-            return "budget/edit";
-        }
-
-        budget.getDrinks().clear();
-        if (drinkIds != null && drinkQuantities != null) {
-            for (int i = 0; i < drinkIds.size(); i++) {
-                Drink drink = drinkService.getByIdWithIngredients(drinkIds.get(i));
-                BudgetDrink bd = new BudgetDrink();
-                bd.setBudget(budget);
-                bd.setDrink(drink);
-                bd.setQuantity(drinkQuantities.get(i));
-                budget.getDrinks().add(bd);
-            }
-        }
-
-        budget.getAutoIngredients().clear();
-        if (autoIngredientIds != null) {
-            for (int i = 0; i < autoIngredientIds.size(); i++) {
-                Ingredient ing = ingredientService.getById(autoIngredientIds.get(i));
-                BigDecimal qty = autoIngredientQuantities.get(i);
-                BigDecimal price = autoIngredientUnitPrices.get(i) != null ? autoIngredientUnitPrices.get(i) : BigDecimal.ZERO;
-                Integer unitsNeeded = autoIngredientUnits.get(i);
-
-                BudgetAutoIngredient bi = new BudgetAutoIngredient();
-                bi.setBudget(budget);
-                bi.setIngredient(ing);
-                bi.setQuantity(qty);
-                bi.setUnitPrice(price);
-                bi.setUnitsNeeded(unitsNeeded);
-                bi.setTotalPrice(price.multiply(BigDecimal.valueOf(unitsNeeded)));
-
-                budget.getAutoIngredients().add(bi);
-            }
-        }
-
-        budget.getManualIngredients().clear();
-        if (manualIngredientIds != null) {
-            for (int i = 0; i < manualIngredientIds.size(); i++) {
-                Ingredient ing = ingredientService.getById(manualIngredientIds.get(i));
-
-                BigDecimal qty = manualIngredientQuantities.get(i);
-                BigDecimal price = manualIngredientUnitPrices.get(i) != null ? manualIngredientUnitPrices.get(i) : BigDecimal.ZERO;
-
-                Integer unitsNeeded = null;
-                if (manualIngredientUnits != null && manualIngredientUnits.size() > i) {
-                    unitsNeeded = manualIngredientUnits.get(i);
-                }
-
-                BigDecimal totalPrice = price.multiply(BigDecimal.valueOf(unitsNeeded != null ? unitsNeeded : 0));
-
-                BudgetManualIngredient bm = new BudgetManualIngredient();
-                bm.setBudget(budget);
-                bm.setIngredient(ing);
-                bm.setQuantity(qty);
-                bm.setUnitsNeeded(unitsNeeded != null ? unitsNeeded : 0);
-                bm.setUnitPrice(price);
-                bm.setTotalPrice(totalPrice);
-
-                budget.getManualIngredients().add(bm);
-            }
-        }
-
-        budget.getResources().clear();
-        if (resourceIds != null) {
-            for (int i = 0; i < resourceIds.size(); i++) {
-                Resource r = resourceService.getById(resourceIds.get(i));
-                BigDecimal qty = resourceQuantities.get(i);
-                BigDecimal price = resourceUnitPrices.get(i);
-                BigDecimal total = resourceTotals.get(i);
-
-                BudgetResource br = new BudgetResource();
-                br.setBudget(budget);
-                br.setResource(r);
-                br.setQuantity(qty != null ? qty : BigDecimal.ZERO);
-                br.setUnitPrice(price != null ? price : BigDecimal.ZERO);
-                br.setTotalPrice(total != null ? total : BigDecimal.ZERO);
-
-                budget.getResources().add(br);
-            }
-        }
-
-        if (autoProportion)
-            budgetService.applyDrinkProportion(budget, budget.getPeopleCount());
-
-        if (budget.getCustomFinalPrice() != null &&
-                budget.getCustomFinalPrice().compareTo(BigDecimal.ZERO) > 0) {
-            budget.setFinalPrice(budget.getCustomFinalPrice());
-        }
-
-        budgetService.calculateTotals(budget);
-
-        budgetService.save(budget);
-
-        return "redirect:/budget";
     }
 
     @PostMapping("/{id}/apply-proportion")
