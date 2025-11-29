@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalhes do Orçamento</title>
+    <link rel="stylesheet" th:href="@{/budget/save.css}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="card">
+        <h2 class="card-title mb-4 text-center">Detalhes do Orçamento</h2>
+
+        <div class="row mb-3 g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nome do orçamento</label>
+                <div class="p-2 bg-light border rounded">
+                    <p class="form-control-plaintext mb-0" th:text="${budget.name}"></p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Qtd. de pessoas</label>
+                <div class="p-2 bg-light border rounded text-center">
+                    <p class="form-control-plaintext mb-0 number" th:text="${budget.peopleCount}"></p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Markup (%)</label>
+                <div class="p-2 bg-light border rounded text-center">
+                    <p class="form-control-plaintext mb-0 number" th:text="${budget.markupPercentage}"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4 g-3">
+            <div class="col-md-6">
+                <label class="form-label">Data do evento</label>
+                <div class="p-2 bg-light border rounded">
+                    <p class="form-control-plaintext mb-0" th:text="${budget.eventDate}"></p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Hora do evento</label>
+                <div class="p-2 bg-light border rounded text-center">
+                    <p class="form-control-plaintext mb-0" th:text="${budget.eventHour}"></p>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+        <h5 class="mb-3">Drinks Selecionados</h5>
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Drink</th>
+                    <th>Quantidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="d : ${selectedDrinks}">
+                    <td th:text="${d.drinkName}"></td>
+                    <td class="number" th:text="${d.quantity}"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <hr>
+
+        <h5 class="mb-3">Ingredientes dos Drinks Selecionados</h5>
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Ingrediente</th>
+                    <th>Quantidade</th>
+                    <th>Unidade(s)</th>
+                    <th>Valor Unit.</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="ai : ${autoIngredients}">
+                    <td th:text="${ai.ingredientName}"></td>
+                    <td><span class="number" th:text="${ai.quantity}"></span> <small th:text="${ai.unitMeasure}"></small></td>
+                    <td class="number" th:text="${ai.unitsNeeded}"></td>
+                    <td class="currency" th:text="${ai.unitPrice}"></td>
+                    <td class="currency" th:text="${ai.totalPrice}"></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="4" class="text-end">Subtotal Ingredientes de Drinks</th>
+                    <th class="currency" th:text="${autoIngredientsSubtotal}"></th>
+                </tr>
+            </tfoot>
+        </table>
+
+        <hr>
+        <h5 class="mb-3">Ingredientes Manuais</h5>
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Ingrediente</th>
+                    <th>Quantidade</th>
+                    <th>Unidades</th>
+                    <th>Valor Unit.</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="mi : ${manualIngredients}">
+                    <td th:text="${mi.ingredientName}"></td>
+                    <td><span class="number" th:text="${mi.quantity}"></span> <small th:text="${mi.unitMeasure}"></small></td>
+                    <td class="number" th:text="${mi.unitsNeeded}"></td>
+                    <td class="currency" th:text="${mi.unitPrice}"></td>
+                    <td class="currency" th:text="${mi.totalPrice}"></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="4" class="text-end">Subtotal Ingredientes Manuais</th>
+                    <th class="currency" th:text="${manualIngredientsSubtotal}"></th>
+                </tr>
+            </tfoot>
+        </table>
+
+        <hr>
+        <h5 class="mb-3">Recursos</h5>
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Recurso</th>
+                    <th>Quantidade</th>
+                    <th>Valor Unit.</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="r : ${resources}">
+                    <td th:text="${r.resourceName}"></td>
+                    <td class="number" th:text="${r.quantity}"></td>
+                    <td class="currency" th:text="${r.unitPrice}"></td>
+                    <td class="currency" th:text="${r.totalPrice}"></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">Subtotal Recursos</th>
+                    <th class="currency" th:text="${resourceSubtotal}"></th>
+                </tr>
+            </tfoot>
+        </table>
+
+        <hr>
+        <div class="text-end mb-4">
+            <h4>Total Custo: <span class="currency" th:text="${totalCost}"></span></h4>
+            <h4 class="text-success">Preço Final: <span class="currency" th:text="${finalPrice}"></span></h4>
+            <div class="mt-2" th:if="${budget.customFinalPrice != null}">
+                <label class="form-label">Valor personalizado</label>
+                <p class="form-control-plaintext currency" th:text="${budget.customFinalPrice}"></p>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <a th:href="@{/budget}" class="btn btn-secondary px-5">Voltar</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        function formatNumber(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        document.querySelectorAll('.currency').forEach(el => {
+            const raw = parseFloat(el.textContent);
+            if (!isNaN(raw)) el.textContent = formatCurrency(raw);
+        });
+
+        document.querySelectorAll('.number').forEach(el => {
+            const raw = parseFloat(el.textContent);
+            if (!isNaN(raw)) el.textContent = formatNumber(raw);
+        });
+    });
+</script>
+
+</body>
+</html>
