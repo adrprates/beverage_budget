@@ -1,92 +1,96 @@
 <!DOCTYPE html>
 <html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prates Bar - Orçamentos</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <link rel="stylesheet" th:href="@{/budget/list.css}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orçamentos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/budget/list.css}">
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark custom-navbar fixed-top">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}">
-      <i class="bi bi-stars me-2"></i> Prates Bar
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" th:href="@{/ingredient}"><i class="bi bi-box-seam"></i> Ingredientes</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/drink}"><i class="bi bi-cup-straw"></i> Drinks</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/resource}"><i class="bi bi-stars"></i> Recursos</a></li>
-        <li class="nav-item"><a class="nav-link active" th:href="@{/budget}"><i class="bi bi-cash-coin"></i> Orçamentos</a></li>
-      </ul>
+<nav class="navbar navbar-expand-lg bg-white border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}">Prates Bar</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="menu">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/ingredient}">Ingredientes</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/drink}">Drinks</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/resource}">Recursos</a></li>
+                <li class="nav-item"><a class="nav-link active" th:href="@{/budget}">Orçamentos</a></li>
+            </ul>
+        </div>
     </div>
-  </div>
 </nav>
 
-<div class="text-center mt-5 pt-5">
-  <a th:href="@{/budget/create}" class="btn btn-outline-light btn-card btn-sm">Novo Orçamento</a>
-</div>
-
-<div class="container dashboard-container">
-  <h1 class="text-center mb-4">
-    <span style="color:#ffffff;">Lista de</span> <span class="highlight">Orçamentos</span>
-  </h1>
-
-  <div class="container text-center mt-4 mb-4">
-    <div class="input-group w-50 mx-auto" style="margin-bottom: 50px;">
-      <span class="input-group-text bg-dark text-light" id="basic-addon1">
-        <i class="bi bi-search"></i>
-      </span>
-      <input type="text" id="searchInput" class="form-control bg-dark text-light" placeholder="Pesquisar Orçamento" aria-label="Pesquisar Orçamento" aria-describedby="basic-addon1" autocomplete="off">
+<div class="container mt-5 pt-4">
+    <div class="text-center mb-4">
+        <a th:href="@{/budget/create}" class="btn btn-primary px-4">Novo Orçamento</a>
     </div>
-  </div>
 
-  <div th:each="budget : ${list}" class="card dashboard-card mb-4">
-    <div class="card-body">
-      <h5 class="budget-name" th:text="${budget.name}">Nome do Orçamento</h5>
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
-      <ul class="budget-attributes">
-        <li><label>Data do Evento:</label> <span th:text="${budget.eventDate != null ? budget.eventDate : '—'}"></span></li>
-        <li><label>Hora do Evento:</label> <span th:text="${budget.eventHour != null ? budget.eventHour : '—'}"></span></li>
-        <li><label>Pessoas:</label> <span th:text="${budget.peopleCount}"></span></li>
-        <li><label>Status:</label> <span th:text="${budget.status}"></span></li>
-        <li><label>Custo Total:</label> R$ <span th:text="${#numbers.formatDecimal(budget.totalCost, 2, 'COMMA', 2, 'POINT')}"></span></li>
-        <li><label>Preço Final:</label> R$ <span th:text="${#numbers.formatDecimal(budget.finalPrice, 2, 'COMMA', 2, 'POINT')}"></span></li>
-      </ul>
-
-      <div class="mt-3">
-        <a th:href="@{/budget/edit/{id}(id=${budget.id})}" class="btn btn-sm btn-edit me-2">
-          <i class="bi bi-pencil"></i> Editar
-        </a>
-        <a th:href="@{/budget/delete/{id}(id=${budget.id})}" class="btn btn-sm btn-delete me-2">
-          <i class="bi bi-trash"></i> Excluir
-        </a>
-        <a th:href="@{/budget/detail/{id}(id=${budget.id})}" class="btn btn-sm btn-view">
-          <i class="bi bi-eye"></i> Detalhes
-        </a>
-      </div>
-
+    <div class="w-50 mx-auto mb-4">
+        <input id="searchInput" type="text" class="form-control" placeholder="Pesquisar Orçamento..." autocomplete="off">
     </div>
-  </div>
+
+    <div th:each="budget : ${list}" class="card simple-card mb-3">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3" th:text="${budget.name}">Nome do Orçamento</h5>
+
+            <p class="mb-1"><strong>Data do Evento:</strong>
+                <span th:text="${budget.eventDate != null ? budget.eventDate : '—'}"></span>
+            </p>
+            <p class="mb-1"><strong>Hora do Evento:</strong>
+                <span th:text="${budget.eventHour != null ? budget.eventHour : '—'}"></span>
+            </p>
+            <p class="mb-1"><strong>Pessoas:</strong> <span th:text="${budget.peopleCount}"></span></p>
+
+            <p class="mb-1"><strong>Custo Total:</strong> 
+                R$ <span class="budget-cost" th:attr="data-value=${budget.totalCost}">0,00</span>
+            </p>
+            <p class="mb-1"><strong>Preço Final:</strong> 
+                R$ <span class="budget-final" th:attr="data-value=${budget.finalPrice}">0,00</span>
+            </p>
+
+            <div class="mt-3">
+                <a th:href="@{/budget/edit/{id}(id=${budget.id})}" class="btn btn-primary btn-sm me-2">Editar</a>
+                <a th:href="@{/budget/delete/{id}(id=${budget.id})}"
+                   onclick="return confirm('Tem certeza que deseja excluir este orçamento?');"
+                   class="btn btn-secondary btn-sm me-2">Excluir</a>
+                <a th:href="@{/budget/detail/{id}(id=${budget.id})}" class="btn btn-purple btn-sm">Detalhes</a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-  const searchInput = document.getElementById('searchInput');
-  searchInput.addEventListener('input', function() {
-    const filter = this.value.toLowerCase();
-    const cards = document.querySelectorAll('.dashboard-card');
+    function formatBRL(value) {
+        if (!value) return '0,00';
+        return Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 
-    cards.forEach(card => {
-      const name = card.querySelector('.budget-name').textContent.toLowerCase();
-      card.style.display = name.includes(filter) ? '' : 'none';
+    document.querySelectorAll('.budget-cost').forEach(el => {
+        el.textContent = formatBRL(el.dataset.value);
     });
-  });
+    document.querySelectorAll('.budget-final').forEach(el => {
+        el.textContent = formatBRL(el.dataset.value);
+    });
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', function () {
+        const filter = this.value.toLowerCase();
+        const cards = document.querySelectorAll('.simple-card');
+
+        cards.forEach(card => {
+            const name = card.querySelector('h5').textContent.toLowerCase();
+            card.style.display = name.includes(filter) ? "" : "none";
+        });
+    });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

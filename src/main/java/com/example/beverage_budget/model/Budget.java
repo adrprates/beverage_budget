@@ -1,6 +1,5 @@
 package com.example.beverage_budget.model;
 
-import com.example.beverage_budget.enums.BudgetStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -67,8 +66,4 @@ public class Budget {
 
     @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BudgetResource> resources = new ArrayList<>();
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private BudgetStatus status = BudgetStatus.PENDING;
 }
