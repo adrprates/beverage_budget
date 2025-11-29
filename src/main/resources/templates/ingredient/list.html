@@ -38,6 +38,14 @@
         <a th:href="@{/ingredient/create}" class="btn btn-primary px-4">Cadastrar Ingrediente</a>
     </div>
 
+    <div th:if="${successMessage}" class="alert alert-success" role="alert">
+        <span th:text="${successMessage}"></span>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <span th:text="${errorMessage}"></span>
+    </div>
+
     <h2 class="text-center mb-4">Lista de Ingredientes</h2>
 
     <div class="w-50 mx-auto mb-4">

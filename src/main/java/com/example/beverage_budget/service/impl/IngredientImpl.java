@@ -1,10 +1,15 @@
 package com.example.beverage_budget.service.impl;
 
 import com.example.beverage_budget.enums.IngredientType;
+import com.example.beverage_budget.model.BudgetManualIngredient;
 import com.example.beverage_budget.model.Ingredient;
+import com.example.beverage_budget.repository.BudgetManualIngredientRepository;
+import com.example.beverage_budget.repository.DrinkRepository;
 import com.example.beverage_budget.repository.IngredientRepository;
 import com.example.beverage_budget.service.IngredientService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -16,6 +21,12 @@ public class IngredientImpl implements IngredientService {
 
     @Autowired
     private IngredientRepository ingredientRepository;
+
+    @Autowired
+    private DrinkRepository drinkRepository;
+
+    @Autowired
+    private BudgetManualIngredientRepository budgetManualIngredientRepository;
 
     @Override
     public List<Ingredient> getAll() {
@@ -41,7 +52,19 @@ public class IngredientImpl implements IngredientService {
 
     @Override
     public void deleteById(Long id) {
-        ingredientRepository.deleteById(id);
+        Ingredient ingredient = ingredientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ingrediente não encontrado"));
+
+        boolean usedInManual = budgetManualIngredientRepository.existsByIngredient(ingredient);
+        boolean usedInDrink = drinkRepository.existsByIngredientsContaining(ingredient);
+
+        if (usedInManual || usedInDrink) {
+            throw new DataIntegrityViolationException(
+                    "Ingrediente usado em bebidas ou orçamentos manuais"
+            );
+        }
+
+        ingredientRepository.delete(ingredient);
     }
 
     @Override

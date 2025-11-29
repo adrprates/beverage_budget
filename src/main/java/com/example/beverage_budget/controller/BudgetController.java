@@ -332,7 +332,7 @@ public class BudgetController {
     @PostMapping("/{id}/apply-proportion")
     public String applyProportion(@PathVariable Long id, @RequestParam int targetServings) {
         Budget budget = budgetService.getById(id);
-        
+
         budgetService.applyDrinkProportion(budget, targetServings);
         return "redirect:/budget/edit/" + id;
     }

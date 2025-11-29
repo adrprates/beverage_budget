@@ -38,6 +38,9 @@
         <a th:href="@{/drink/create}" class="btn btn-primary px-4">Cadastrar Drink</a>
     </div>
 
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
     <h2 class="text-center mb-4">Lista de Drinks</h2>
 
     <div class="w-50 mx-auto mb-4">

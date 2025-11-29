@@ -1,6 +1,7 @@
 package com.example.beverage_budget.repository;
 
 import com.example.beverage_budget.model.Drink;
+import com.example.beverage_budget.model.Ingredient;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,4 +16,6 @@ public interface DrinkRepository extends JpaRepository<Drink, Long> {
 
     @Query("SELECT d FROM Drink d LEFT JOIN FETCH d.ingredients di LEFT JOIN FETCH di.ingredient WHERE d.id = :id")
     Optional<Drink> findByIdWithIngredients(@Param("id") Long id);
+
+    boolean existsByIngredientsContaining(Ingredient ingredient);
 }

@@ -188,8 +188,13 @@ public class DrinkController {
     }
 
     @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id) {
-        drinkService.deleteById(id);
+    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            drinkService.deleteById(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Drink excluído com sucesso!");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
         return "redirect:/drink";
     }
 

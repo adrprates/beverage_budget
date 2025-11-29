@@ -118,13 +118,13 @@ public class IngredientController {
         try {
             ingredientService.deleteById(id);
             redirectAttributes.addFlashAttribute("successMessage", "Ingrediente removido com sucesso!");
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "Não é possível remover este ingrediente pois ele está associado a uma ou mais bebidas.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Ocorreu um erro ao tentar remover o ingrediente.");
+            redirectAttributes.addFlashAttribute("errorMessage", "Não é possível excluir o ingredient, pois ele está associado a um drink ou orçamento.");
         }
 
         return "redirect:/ingredient";
     }
+
 }

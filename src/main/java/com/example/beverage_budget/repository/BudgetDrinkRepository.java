@@ -1,6 +1,7 @@
 package com.example.beverage_budget.repository;
 
 import com.example.beverage_budget.model.BudgetDrink;
+import com.example.beverage_budget.model.Drink;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,4 +18,5 @@ public interface BudgetDrinkRepository extends JpaRepository<BudgetDrink, Long> 
     @Query("DELETE FROM BudgetDrink bd WHERE bd.budget.id = :budgetId")
     void deleteByBudgetId(@Param("budgetId") Long budgetId);
 
+    boolean existsByDrink(Drink drink);
 }

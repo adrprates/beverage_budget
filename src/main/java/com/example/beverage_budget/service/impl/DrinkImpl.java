@@ -2,8 +2,10 @@ package com.example.beverage_budget.service.impl;
 
 import com.example.beverage_budget.model.Drink;
 import com.example.beverage_budget.model.DrinkIngredient;
+import com.example.beverage_budget.repository.BudgetDrinkRepository;
 import com.example.beverage_budget.repository.DrinkRepository;
 import com.example.beverage_budget.service.DrinkService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,9 @@ public class DrinkImpl implements DrinkService {
 
     @Autowired
     private DrinkRepository drinkRepository;
+
+    @Autowired
+    private BudgetDrinkRepository budgetDrinkRepository;
 
     @Override
     public List<Drink> getAll() {
@@ -46,7 +51,16 @@ public class DrinkImpl implements DrinkService {
 
     @Override
     public void deleteById(Long id) {
-        drinkRepository.deleteById(id);
+        Drink drink = drinkRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Drink não encontrado"));
+
+        boolean usedInBudget = budgetDrinkRepository.existsByDrink(drink);
+
+        if (usedInBudget) {
+            throw new IllegalStateException("Não é possível excluir o drink, pois ele está associado a um orçamento");
+        }
+
+        drinkRepository.delete(drink);
     }
 
     @Override
