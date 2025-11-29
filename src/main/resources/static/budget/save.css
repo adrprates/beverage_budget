@@ -5,6 +5,19 @@ body {
     padding-top: 70px;
 }
 
+.navbar {
+    background: #fff !important;
+}
+
+.nav-link {
+    color: #333 !important;
+}
+
+.nav-link.active {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
 .card {
     border: 1px solid #ddd;
     background: #fff;
