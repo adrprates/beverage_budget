@@ -34,6 +34,9 @@
   <a th:href="@{/resource/create}" class="btn btn-outline-light btn-card btn-sm">Cadastrar Recurso</a>
 </div>
 
+<div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+<div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
 <div class="container dashboard-container">
   <h1 class="text-center mb-4">
     <span style="color:#ffffff;">Lista de</span> <span class="highlight">Recursos</span>

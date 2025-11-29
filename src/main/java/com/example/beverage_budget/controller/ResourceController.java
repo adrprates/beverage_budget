@@ -4,10 +4,12 @@ import com.example.beverage_budget.model.Resource;
 import com.example.beverage_budget.service.ResourceService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -62,8 +64,17 @@ public class ResourceController {
     }
 
     @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id) {
-        resourceService.deleteById(id);
+    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            resourceService.deleteById(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Recurso removido com sucesso!");
+        } catch (DataIntegrityViolationException e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Não é possível remover este recurso pois ele está associado a um ou mais orçamentos.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ocorreu um erro ao tentar remover o recurso.");
+        }
+
         return "redirect:/resource";
     }
 }

@@ -893,8 +893,7 @@ document.getElementById('addResourceBtn')?.addEventListener('click', () => {
     if (!resourceId || isNaN(quantity)) return;
 
     const resourceName = document.getElementById('resourceSelect').selectedOptions[0]?.text || 'Recurso';
-    const units = data.unitsNeeded || 0;
-    const total = units * unitPrice;
+    const total = quantity * unitPrice;
     const tbody = document.getElementById('resourcesTable');
     const row = document.createElement('tr');
 
@@ -925,6 +924,7 @@ document.getElementById('addResourceBtn')?.addEventListener('click', () => {
     document.getElementById('resourceSelect').value = '';
     document.getElementById('resourceQuantity').value = '';
     document.getElementById('resourceUnitPrice').value = '';
+
 });
 
 document.getElementById('restoreProportionBtn')?.addEventListener('click', () => {

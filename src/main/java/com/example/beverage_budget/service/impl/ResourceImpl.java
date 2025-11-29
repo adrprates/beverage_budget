@@ -1,9 +1,11 @@
 package com.example.beverage_budget.service.impl;
 
 import com.example.beverage_budget.model.Resource;
+import com.example.beverage_budget.repository.BudgetResourceRepository;
 import com.example.beverage_budget.repository.ResourceRepository;
 import com.example.beverage_budget.service.ResourceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,6 +16,9 @@ public class ResourceImpl implements ResourceService {
 
     @Autowired
     private ResourceRepository resourceRepository;
+
+    @Autowired
+    private BudgetResourceRepository budgetResourceRepository;
 
     @Override
     public List<Resource> getAll() {
@@ -39,7 +44,18 @@ public class ResourceImpl implements ResourceService {
 
     @Override
     public void deleteById(Long id) {
-        resourceRepository.deleteById(id);
+        Resource resource = resourceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Recurso não encontrado"));
+
+        boolean usedInBudget = budgetResourceRepository.existsByResource(resource);
+
+        if (usedInBudget) {
+            throw new DataIntegrityViolationException(
+                    "Recurso está associado a um ou mais orçamentos e não pode ser removido"
+            );
+        }
+
+        resourceRepository.delete(resource);
     }
 
     @Override
